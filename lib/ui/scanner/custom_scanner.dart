@@ -71,6 +71,7 @@ class _CustomScannerState extends State<CustomScanner> {
     return _pickedFile!=null? Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
             context.read<GlobalProvider>().chooseLanguage(widget.field.label!),
           style: const TextStyle(color: Colors.black),

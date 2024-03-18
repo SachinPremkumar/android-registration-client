@@ -224,6 +224,7 @@ class _CustomDropDownState extends State<DropDownControl> {
                     hintStyle: const TextStyle(
                       color: appBlackShade3,
                     ),
+                    suffixIcon: const Icon(Icons.keyboard_arrow_down)
                   ),
                   items: list
                       .map((option) => DropdownMenuItem(

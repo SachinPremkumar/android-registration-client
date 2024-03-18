@@ -147,6 +147,8 @@ class _CustomDynamicDropDownState extends State<GenderControl> {
 
   @override
   Widget build(BuildContext context) {
+    bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
     String mandatoryLangCode =
         context.read<GlobalProvider>().mandatoryLanguages[0] ?? "eng";
     String mandatoryLang = context
@@ -159,8 +161,8 @@ class _CustomDynamicDropDownState extends State<GenderControl> {
         builder: (BuildContext context,
             AsyncSnapshot<List<Map<String, String?>>> snapshot) {
           return Card(
-            elevation: 0,
-            margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 12),
+            elevation: 5,
+            margin: EdgeInsets.symmetric(vertical: 1, horizontal:  isPortrait ? 16 : 0),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               child: Column(
