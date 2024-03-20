@@ -52,144 +52,156 @@ class _CustomScannerState extends State<CustomScanner> {
 
   @override
   Widget build(BuildContext context) {
-    final cropPreview = _pickedFile!=null ? CropPreview(
-      controller: _controller,
-      bytes: _pickedFile!,
-      mode: mode,
-      hitSize: 30,
-      loadingWidget: const CircularProgressIndicator(),
-      maskOptions: MaskOptions(
-        aspectRatio: _aspectRatio,
-        backgroundColor: Colors.transparent.withOpacity(0.5),
-        borderColor: solidPrimary,
-        minSize: 100,
-        //strokeWidth: 3,
-      ),
-      dragPointBuilder: _buildCropDragPoints,
-    ) : const SizedBox.shrink();
+    final cropPreview = _pickedFile != null
+        ? CropPreview(
+            controller: _controller,
+            bytes: _pickedFile!,
+            mode: mode,
+            hitSize: 30,
+            loadingWidget: const CircularProgressIndicator(),
+            maskOptions: MaskOptions(
+              aspectRatio: _aspectRatio,
+              backgroundColor: Colors.transparent.withOpacity(0.5),
+              borderColor: solidPrimary,
+              minSize: 100,
+              //strokeWidth: 3,
+            ),
+            dragPointBuilder: _buildCropDragPoints,
+          )
+        : const SizedBox.shrink();
 
-    return _pickedFile!=null? Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-            context.read<GlobalProvider>().chooseLanguage(widget.field.label!),
-          style: const TextStyle(color: Colors.black),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        actions: [
-          IconButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: const Icon(
-                Icons.close,
-                color: Colors.black,
-              )),
-        ],
-      ),
-      body: _pickedFile!= null ? Column(
-        children: [
-         Expanded(
-              child: cropPreview,
-         ),
-          ///customized options for cropper
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //   children: [
-          //     Flexible(
-          //       child: ImageFormatDropdown(
-          //         onChanged: (value) => _format = value,
-          //       ),
-          //     ),
-          //     Flexible(
-          //       child: AspectRatioDropdown(
-          //         aspectRatio: _aspectRatio,
-          //         onChanged: (value) => setState(() => _aspectRatio = value),
-          //       ),
-          //     ),
-          //     Flexible(
-          //       child: CropModesButtons(
-          //         onChanged: (value) => setState(() => _mode = value),
-          //       ),
-          //     ),
-          //   ],
-          // ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: Colors.white,
-                        side: BorderSide(width: 2.0, color: solidPrimary),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(2)),
-                        ),
-                      ),
-                      onPressed: () async {
-                        _uploadImage();
-                      },
-                      child: Text(
-                        AppLocalizations.of(context)!.retake,
-                        style: TextStyle(fontSize: 16,color: solidPrimary),
-                      ),
-                    ),
-                  ),
-                ),
+    return _pickedFile != null
+        ? Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: Text(
+                context
+                    .read<GlobalProvider>()
+                    .chooseLanguage(widget.field.label!),
+                style: TextStyle(
+                    color: Colors.black, fontSize: isMobileSize ? 20 : 25),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        _cropImage(context);
-                      },
-                      child: Text(
-                        AppLocalizations.of(context)!.save,
-                        style: const TextStyle(fontSize: 16),
+              backgroundColor: Colors.white,
+              elevation: 1,
+              actions: [
+                IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.black,
+                    )),
+              ],
+            ),
+            body: _pickedFile != null
+                ? Column(
+                    children: [
+                      Expanded(
+                        child: cropPreview,
                       ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-        ],
-      ) : const SizedBox.shrink(),
-    ): const SizedBox.shrink();
+
+                      ///customized options for cropper
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      //   children: [
+                      //     Flexible(
+                      //       child: ImageFormatDropdown(
+                      //         onChanged: (value) => _format = value,
+                      //       ),
+                      //     ),
+                      //     Flexible(
+                      //       child: AspectRatioDropdown(
+                      //         aspectRatio: _aspectRatio,
+                      //         onChanged: (value) => setState(() => _aspectRatio = value),
+                      //       ),
+                      //     ),
+                      //     Flexible(
+                      //       child: CropModesButtons(
+                      //         onChanged: (value) => setState(() => _mode = value),
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: SizedBox(
+                                height: 50,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    elevation: 0,
+                                    backgroundColor: Colors.white,
+                                    side: BorderSide(
+                                        width: 2.0, color: solidPrimary),
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(2)),
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    _uploadImage();
+                                  },
+                                  child: Text(
+                                    AppLocalizations.of(context)!.retake,
+                                    style: TextStyle(
+                                        fontSize: 16, color: solidPrimary),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: SizedBox(
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    _cropImage(context);
+                                  },
+                                  child: Text(
+                                    AppLocalizations.of(context)!.save,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          )
+        : const SizedBox.shrink();
   }
 
   Future<void> _uploadImage() async {
     final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.camera);
+        await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
       _pickedFile = await pickedFile.readAsBytes();
-      setState(() {
-      });
+      setState(() {});
     }
   }
 
   Future<void> _cropImage(BuildContext context) async {
     final croppedBytes = await _controller.crop(format: format);
     if (mounted) {
-      return  Navigator.pop(context, croppedBytes);
+      return Navigator.pop(context, croppedBytes);
     }
   }
 
   CustomPaint _buildCropDragPoints(
-      double size,
-      CropDragPointPosition position,
-      ) {
+    double size,
+    CropDragPointPosition position,
+  ) {
     List<Offset> points;
     switch (position) {
       case CropDragPointPosition.topLeft:
