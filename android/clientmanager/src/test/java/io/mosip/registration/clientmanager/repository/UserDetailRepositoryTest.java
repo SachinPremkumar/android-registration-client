@@ -225,4 +225,79 @@ public class UserDetailRepositoryTest {
 
         assertEquals("", result);
     }
+
+    @Test
+    public void testUpdateUserDetail() {
+        doNothing().when(userDetailDao).updateUserDetail(anyBoolean(), anyString(), anyLong());
+        userDetailRepository.updateUserDetail("9343");
+        verify(userDetailDao).updateUserDetail(eq(true), eq("9343"), anyLong());
+    }
+
+    @Test
+    public void testIsValidPassword_Exception() throws NoSuchAlgorithmException {
+        UserPassword password = new UserPassword("9343");
+        password.setSalt("encodedSalt");
+        password.setPwd("correctHash");
+
+        when(userPasswordDao.getUserPassword("9343")).thenReturn(password);
+
+        try (MockedStatic<HMACUtils2> mockedStatic = mockStatic(HMACUtils2.class)) {
+            mockedStatic.when(() -> HMACUtils2.digestAsPlainTextWithSalt(any(byte[].class), any(byte[].class)))
+                    .thenThrow(new NoSuchAlgorithmException("Algorithm not found"));
+
+            boolean result = userDetailRepository.isValidPassword("9343", "1234");
+
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    public void testSetPasswordHash_Exception() throws NoSuchAlgorithmException {
+        UserPassword password = new UserPassword("9343");
+        password.setSalt("encodedSalt");
+
+        when(userPasswordDao.getUserPassword("9343")).thenReturn(password);
+
+        try (MockedStatic<HMACUtils2> mockedStatic = mockStatic(HMACUtils2.class)) {
+            mockedStatic.when(() -> HMACUtils2.digestAsPlainTextWithSalt(any(byte[].class), any(byte[].class)))
+                    .thenThrow(new NoSuchAlgorithmException("Algorithm not found"));
+
+            userDetailRepository.setPasswordHash("9343", "admin123");
+
+            verify(userPasswordDao).insertUserPassword(any(UserPassword.class));
+        }
+    }
+
+    @Test
+    public void testSetPasswordHash_UserPasswordNull() throws NoSuchAlgorithmException {
+        when(userPasswordDao.getUserPassword("9343")).thenReturn(null);
+
+        try (MockedStatic<HMACUtils2> mockedStatic = mockStatic(HMACUtils2.class)) {
+            mockedStatic.when(() -> HMACUtils2.digestAsPlainTextWithSalt(any(byte[].class), any(byte[].class)))
+                    .thenReturn("newHash");
+
+            userDetailRepository.setPasswordHash("9343", "admin123");
+
+            verify(userPasswordDao).insertUserPassword(any(UserPassword.class));
+        }
+    }
+
+    @Test
+    public void testSetPasswordHash_SaltNull() throws NoSuchAlgorithmException {
+        UserPassword password = new UserPassword("9343");
+        password.setSalt(null);
+
+        when(userPasswordDao.getUserPassword("9343")).thenReturn(password);
+
+        try (MockedStatic<HMACUtils2> mockedStatic = mockStatic(HMACUtils2.class)) {
+            mockedStatic.when(() -> HMACUtils2.digestAsPlainTextWithSalt(any(byte[].class), any(byte[].class)))
+                    .thenReturn("newHash");
+
+            userDetailRepository.setPasswordHash("9343", "admin123");
+
+            verify(userPasswordDao).insertUserPassword(any(UserPassword.class));
+            assertNotNull(password.getSalt());
+        }
+    }
+
 }

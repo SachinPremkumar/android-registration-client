@@ -11,18 +11,12 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.*;
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayInputStream;
 import java.lang.reflect.Method;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.util.Base64;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -61,7 +55,6 @@ public class CryptoManagerServiceImplTest {
         try {
             CryptoUtil.base64encoder = Base64.getEncoder();
             CryptoUtil.base64decoder = Base64.getDecoder();
-            // For Bouncy Castle, we can also set a custom encoder/decoder if needed.
         } catch (Exception e) {}
     }
 
@@ -106,7 +99,7 @@ public class CryptoManagerServiceImplTest {
 
     @Test
     public void testIsDataValid() {
-        // Use reflection to access private method
+
         try {
             Method m = CryptoManagerServiceImpl.class.getDeclaredMethod("isDataValid", String.class);
             m.setAccessible(true);
@@ -287,7 +280,6 @@ public class CryptoManagerServiceImplTest {
         assertNotNull(resp.getData());
     }
 
-    // 100% coverage: test edge case for combineByteArray with non-empty data/key
     @Test
     public void testCombineByteArrayWithNonEmpty() {
         byte[] data = {1, 2};
@@ -297,7 +289,6 @@ public class CryptoManagerServiceImplTest {
         assertArrayEquals(expected, CryptoManagerServiceImpl.combineByteArray(data, key, splitter));
     }
 
-    // 100% coverage: test concatCertThumbprint with thumbprint shorter than 32 bytes
     @Test
     public void testConcatCertThumbprintShortThumbprint() {
         byte[] thumb = {1, 2, 3};
@@ -306,7 +297,6 @@ public class CryptoManagerServiceImplTest {
         assertEquals(32 + 3, result.length); // THUMBPRINT_LENGTH + key.length
     }
 
-    // 100% coverage: test symmetricEncrypt with null aad
     @Test
     public void testSymmetricEncryptNullAAD() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -315,7 +305,6 @@ public class CryptoManagerServiceImplTest {
         assertNotNull(enc);
     }
 
-    // 100% coverage: test symmetricEncrypt with empty aad
     @Test
     public void testSymmetricEncryptEmptyAAD() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -324,7 +313,6 @@ public class CryptoManagerServiceImplTest {
         assertNotNull(enc);
     }
 
-    // 100% coverage: test symmetricEncryptWithRandomIV with null aad
     @Test
     public void testSymmetricEncryptWithRandomIVNullAAD() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -333,7 +321,6 @@ public class CryptoManagerServiceImplTest {
         assertNotNull(enc);
     }
 
-    // 100% coverage: test symmetricEncryptWithRandomIV with empty aad
     @Test
     public void testSymmetricEncryptWithRandomIVEmptyAAD() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -342,7 +329,6 @@ public class CryptoManagerServiceImplTest {
         assertNotNull(enc);
     }
 
-    // 100% coverage: test generateAadAndEncryptData
     @Test
     public void testGenerateAadAndEncryptData() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -351,7 +337,6 @@ public class CryptoManagerServiceImplTest {
         assertNotNull(enc);
     }
 
-    // 100% coverage: test symmetricDecrypt with empty aad
     @Test
     public void testSymmetricDecryptEmptyAAD() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -362,7 +347,6 @@ public class CryptoManagerServiceImplTest {
         assertArrayEquals(data, decrypted);
     }
 
-    // 100% coverage: test symmetricDecrypt with null aad
     @Test
     public void testSymmetricDecryptNullAAD() throws Exception {
         SecretKey key = KeyGenerator.getInstance(SYM_ALGO).generateKey();
@@ -372,7 +356,6 @@ public class CryptoManagerServiceImplTest {
         assertArrayEquals(data, decrypted);
     }
 
-    // 100% coverage: test generateRandomBytes with positive size
     @Test
     public void testGenerateRandomBytesPositive() {
         byte[] random = cryptoManagerService.generateRandomBytes(16);

@@ -5,7 +5,6 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.security.MessageDigest;
 import java.util.Base64;
 
 import static org.junit.Assert.*;

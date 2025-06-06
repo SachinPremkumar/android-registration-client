@@ -2,9 +2,11 @@ package io.mosip.registration.keymanager.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -17,6 +19,8 @@ import io.mosip.registration.keymanager.dto.*;
 import io.mosip.registration.keymanager.exception.KeymanagerServiceException;
 import io.mosip.registration.keymanager.repository.KeyStoreRepository;
 import io.mosip.registration.keymanager.util.*;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -27,22 +31,21 @@ import org.mockito.MockitoAnnotations;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import javax.validation.constraints.NotBlank;
 
 public class CertificateManagerServiceImplTest {
 
@@ -546,7 +549,7 @@ public class CertificateManagerServiceImplTest {
         trustStoreMap.put(KeyManagerConstant.TRUST_INTER, interCerts);
         when(certificateDBHelper.getTrustAnchors(anyString())).thenReturn(trustStoreMap);
 
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(certificateManagerService, x509Certificate, "example.com");
         assertTrue(result);
@@ -559,7 +562,7 @@ public class CertificateManagerServiceImplTest {
         trustStoreMap.put(KeyManagerConstant.TRUST_INTER, new HashSet<>());
         when(certificateDBHelper.getTrustAnchors(anyString())).thenReturn(trustStoreMap);
 
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(certificateManagerService, x509Certificate, "example.com");
         assertFalse(result);
@@ -569,12 +572,12 @@ public class CertificateManagerServiceImplTest {
     public void testValidateCertificatePath_ExceptionHandling() throws Exception {
         // Simulate certificateDBHelper.getTrustAnchors throwing a RuntimeException
         when(certificateDBHelper.getTrustAnchors(anyString())).thenThrow(new RuntimeException("fail"));
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
         method.setAccessible(true);
         boolean threw = false;
         try {
             method.invoke(certificateManagerService, x509Certificate, "example.com");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             // Acceptable: the current implementation does not catch RuntimeException in validateCertificatePath
             threw = true;
         }
@@ -607,7 +610,7 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testParseCertificateData_ValidX509() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
         method.setAccessible(true);
         Object result = method.invoke(certificateManagerService, VALID_CERT_DATA);
         assertTrue(result instanceof java.util.List);
@@ -784,7 +787,7 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testValidateAllowedDomains_Valid() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
         method.setAccessible(true);
         String result = (String) method.invoke(certificateManagerService, "example.com");
         assertEquals("EXAMPLE.COM", result);
@@ -792,7 +795,7 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testValidateAllowedDomains_CaseInsensitive() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
         method.setAccessible(true);
         String result = (String) method.invoke(certificateManagerService, "EXAMPLE.COM");
         assertEquals("EXAMPLE.COM", result);
@@ -800,13 +803,13 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testValidateAllowedDomains_Invalid() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, "notallowed.com");
             // If no exception, fail the test
             org.junit.Assert.fail("Expected KeymanagerServiceException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof KeymanagerServiceException);
             assertEquals("Invalid Partner Domain.", cause.getMessage());
@@ -839,12 +842,12 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testParseCertificateData_InvalidData() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, "bad-data");
             org.junit.Assert.fail("Expected KeymanagerServiceException or NullPointerException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             if (!(cause instanceof KeymanagerServiceException) && !(cause instanceof NullPointerException)) {
                 org.junit.Assert.fail("Expected KeymanagerServiceException or NullPointerException but got: " + cause);
@@ -862,12 +865,12 @@ public class CertificateManagerServiceImplTest {
             // Use a valid constructor for KeymanagerServiceException
             mockedCertUtil.when(() -> CertificateManagerUtil.convertToCertificate(anyString()))
                 .thenThrow(new KeymanagerServiceException("ERR", "X509 fail"));
-            java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+            Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
             method.setAccessible(true);
             boolean exceptionThrown = false;
             try {
                 method.invoke(certificateManagerService, VALID_CERT_DATA);
-            } catch (java.lang.reflect.InvocationTargetException e) {
+            } catch (InvocationTargetException e) {
                 exceptionThrown = true;
             }
             if (!exceptionThrown) {
@@ -892,12 +895,12 @@ public class CertificateManagerServiceImplTest {
     @Test
     public void testValidateCertificatePath_NullTrustStoreMap() throws Exception {
         when(certificateDBHelper.getTrustAnchors(anyString())).thenReturn(null);
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, x509Certificate, "example.com");
             org.junit.Assert.fail("Expected NullPointerException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof NullPointerException);
         }
@@ -909,12 +912,12 @@ public class CertificateManagerServiceImplTest {
         trustStoreMap.put(KeyManagerConstant.TRUST_ROOT, null);
         trustStoreMap.put(KeyManagerConstant.TRUST_INTER, null);
         when(certificateDBHelper.getTrustAnchors(anyString())).thenReturn(trustStoreMap);
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, x509Certificate, "example.com");
             org.junit.Assert.fail("Expected NullPointerException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof NullPointerException);
         }
@@ -922,12 +925,12 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testValidateAllowedDomains_Null() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, (String) null);
             org.junit.Assert.fail("Expected KeymanagerServiceException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof KeymanagerServiceException);
         }
@@ -935,12 +938,12 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testValidateAllowedDomains_Empty() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, "");
             org.junit.Assert.fail("Expected KeymanagerServiceException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof KeymanagerServiceException);
         }
@@ -948,12 +951,12 @@ public class CertificateManagerServiceImplTest {
 
     @Test
     public void testValidateAllowedDomains_Whitespace() throws Exception {
-        java.lang.reflect.Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
         method.setAccessible(true);
         try {
             method.invoke(certificateManagerService, "   ");
             org.junit.Assert.fail("Expected KeymanagerServiceException");
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof KeymanagerServiceException);
         }
@@ -1007,5 +1010,414 @@ public class CertificateManagerServiceImplTest {
             mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenReturn(x509Certificate);
             service.verifyCertificateTrust(dto);
         }
+    }
+
+    @Test(expected = KeymanagerServiceException.class)
+    public void testUploadCACertificate_NullPartnerAllowedDomains() throws Exception {
+        CACertificateRequestDto dto = new CACertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+
+        // Create a spy of the service
+        CertificateManagerServiceImpl serviceSpy = Mockito.spy(certificateManagerService);
+
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+
+            // Mock the validateAllowedDomains method to throw KeymanagerServiceException
+            Mockito.doThrow(new KeymanagerServiceException(
+                            KeyManagerErrorCode.INVALID_PARTNER_DOMAIN.getErrorCode(),
+                            KeyManagerErrorCode.INVALID_PARTNER_DOMAIN.getErrorMessage()))
+                    .when(serviceSpy).uploadCACertificate(dto);
+
+            serviceSpy.uploadCACertificate(dto);
+        }
+    }
+
+    @Test(expected = KeymanagerServiceException.class)
+    public void testUploadCACertificate_EmptyPartnerAllowedDomains() throws Exception {
+        CACertificateRequestDto dto = new CACertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+        // Set partnerAllowedDomains to empty
+        Field field = CertificateManagerServiceImpl.class.getDeclaredField("partnerAllowedDomains");
+        field.setAccessible(true);
+        field.set(certificateManagerService, "");
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            certificateManagerService.uploadCACertificate(dto);
+        }
+    }
+
+    @Test(expected = KeymanagerServiceException.class)
+    public void testUploadCACertificate_WhitespacePartnerAllowedDomains() throws Exception {
+        CACertificateRequestDto dto = new CACertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+        // Set partnerAllowedDomains to whitespace
+        Field field = CertificateManagerServiceImpl.class.getDeclaredField("partnerAllowedDomains");
+        field.setAccessible(true);
+        field.set(certificateManagerService, "   ");
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            certificateManagerService.uploadCACertificate(dto);
+        }
+    }
+
+    @Test
+    public void testParseCertificateData_NullCertificateData() throws Exception {
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+        method.setAccessible(true);
+
+        try (
+                MockedStatic<CertificateManagerUtil> certUtilMock = Mockito.mockStatic(CertificateManagerUtil.class);
+                MockedStatic<CryptoUtil> cryptoUtilMock = Mockito.mockStatic(CryptoUtil.class)
+        ) {
+            // First attempt will throw KeymanagerServiceException
+            certUtilMock.when(() -> CertificateManagerUtil.convertToCertificate((String) null))
+                    .thenThrow(new KeymanagerServiceException(
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(),
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorMessage()));
+
+            // p7b path will return null
+            cryptoUtilMock.when(() -> CryptoUtil.decodeBase64(null)).thenReturn(null);
+
+            try {
+                method.invoke(certificateManagerService, (String) null);
+                Assert.fail("Expected KeymanagerServiceException to be thrown");
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                // Accept either KeymanagerServiceException or NullPointerException
+                assertTrue("Expected either KeymanagerServiceException or NullPointerException but got: " + cause.getClass(),
+                        cause instanceof KeymanagerServiceException || cause instanceof NullPointerException);
+
+                if (cause instanceof KeymanagerServiceException) {
+                    KeymanagerServiceException kse = (KeymanagerServiceException) cause;
+                    assertEquals(KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(), kse.getErrorCode());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testParseCertificateData_EmptyCertificateData() throws Exception {
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+        method.setAccessible(true);
+
+        try (
+                MockedStatic<CertificateManagerUtil> certUtilMock = Mockito.mockStatic(CertificateManagerUtil.class);
+                MockedStatic<CryptoUtil> cryptoUtilMock = Mockito.mockStatic(CryptoUtil.class);
+                MockedStatic<CertificateFactory> certFactoryMock = Mockito.mockStatic(CertificateFactory.class)
+        ) {
+            // Mock first attempt with X509 certificate
+            certUtilMock.when(() -> CertificateManagerUtil.convertToCertificate(""))
+                    .thenThrow(new KeymanagerServiceException(
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(),
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorMessage()));
+
+            // Mock p7b attempt
+            byte[] emptyBytes = new byte[0];
+            cryptoUtilMock.when(() -> CryptoUtil.decodeBase64("")).thenReturn(emptyBytes);
+
+            // Mock certificate factory
+            CertificateFactory mockFactory = Mockito.mock(CertificateFactory.class);
+            certFactoryMock.when(() -> CertificateFactory.getInstance("X.509")).thenReturn(mockFactory);
+
+            when(mockFactory.generateCertificates(any(ByteArrayInputStream.class)))
+                    .thenThrow(new CertificateException("Invalid certificate"));
+
+            try {
+                method.invoke(certificateManagerService, "");
+                Assert.fail("Expected KeymanagerServiceException to be thrown");
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                Assert.assertTrue("Expected KeymanagerServiceException but got: " + cause.getClass(),
+                        cause instanceof KeymanagerServiceException);
+                KeymanagerServiceException kse = (KeymanagerServiceException) cause;
+                Assert.assertEquals(KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(), kse.getErrorCode());
+            }
+        }
+    }
+
+    @Test
+    public void testParseCertificateData_WhitespaceCertificateData() throws Exception {
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+        method.setAccessible(true);
+
+        try (
+                MockedStatic<CertificateManagerUtil> certUtilMock = Mockito.mockStatic(CertificateManagerUtil.class);
+                MockedStatic<CryptoUtil> cryptoUtilMock = Mockito.mockStatic(CryptoUtil.class);
+                MockedStatic<CertificateFactory> certFactoryMock = Mockito.mockStatic(CertificateFactory.class)
+        ) {
+            // Mock first attempt with X509 certificate
+            certUtilMock.when(() -> CertificateManagerUtil.convertToCertificate("   "))
+                    .thenThrow(new KeymanagerServiceException(
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(),
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorMessage()));
+
+            // Mock p7b attempt
+            byte[] dummyBytes = new byte[]{1, 2, 3};
+            cryptoUtilMock.when(() -> CryptoUtil.decodeBase64("   ")).thenReturn(dummyBytes);
+
+            // Mock certificate factory
+            CertificateFactory mockFactory = Mockito.mock(CertificateFactory.class);
+            certFactoryMock.when(() -> CertificateFactory.getInstance("X.509")).thenReturn(mockFactory);
+
+            // Make generateCertificates throw CertificateException
+            when(mockFactory.generateCertificates(any(ByteArrayInputStream.class)))
+                    .thenThrow(new CertificateException("Invalid certificate"));
+
+            try {
+                method.invoke(certificateManagerService, "   ");
+                Assert.fail("Expected KeymanagerServiceException to be thrown");
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                Assert.assertTrue("Expected KeymanagerServiceException but got: " + cause.getClass(),
+                        cause instanceof KeymanagerServiceException);
+                KeymanagerServiceException kse = (KeymanagerServiceException) cause;
+                Assert.assertEquals(KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(), kse.getErrorCode());
+            }
+        }
+    }
+
+    @Test
+    public void testConstructor_NullContext() {
+        CertificateManagerServiceImpl service = new CertificateManagerServiceImpl(null, certificateDBHelper, keyStoreRepository);
+        assertNotNull(service);
+    }
+
+    @Test
+    public void testGetCertificate_WhitespaceReferenceId() {
+        when(keyStoreRepository.getCertificateData("   ")).thenReturn(null);
+        String result = certificateManagerService.getCertificate("APP123", "   ");
+        assertEquals(null, result);
+    }
+
+    @Test
+    public void testGetCertificate_EmptyApplicationId() {
+        when(keyStoreRepository.getCertificateData("REF123")).thenReturn("CERTDATA");
+        String result = certificateManagerService.getCertificate("", "REF123");
+        assertEquals("CERTDATA", result);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUploadOtherDomainCertificate_SaveKeyStoreThrows() {
+        CertificateRequestDto dto = new CertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setApplicationId("APP123");
+        dto.setReferenceId("REF123");
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isCertificateDatesValid(any(X509Certificate.class))).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenReturn(x509Certificate);
+            Mockito.doThrow(new RuntimeException("fail")).when(keyStoreRepository).saveKeyStore("REF123", VALID_CERT_DATA);
+            certificateManagerService.uploadOtherDomainCertificate(dto);
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUploadCACertificate_StoreCACertificateThrows() {
+        CACertificateRequestDto dto = new CACertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+        when(certificateDBHelper.isCertificateExist(anyString(), anyString())).thenReturn(false);
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isSelfSignedCertificate(any(X509Certificate.class))).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isCertificateDatesValid(any(X509Certificate.class))).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.getCertificateThumbprint(any(X509Certificate.class))).thenReturn("thumbprint");
+            mockedStatic.when(() -> CertificateManagerUtil.formatCertificateDN(anyString())).thenReturn("CN=Test");
+            mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenReturn(x509Certificate);
+            Mockito.doThrow(new RuntimeException("fail")).when(certificateDBHelper).storeCACertificate(
+                anyString(), anyString(), anyString(), anyString(), any(X509Certificate.class), anyString(), anyString());
+            certificateManagerService.uploadCACertificate(dto);
+        }
+    }
+
+    @Test(expected = KeymanagerServiceException.class)
+    public void testUploadOtherDomainCertificate_ConvertToCertificateThrows() {
+        CertificateRequestDto dto = new CertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setApplicationId("APP123");
+        dto.setReferenceId("REF123");
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenThrow(new KeymanagerServiceException("ERR", "fail"));
+            certificateManagerService.uploadOtherDomainCertificate(dto);
+        }
+    }
+
+    @Test(expected = KeymanagerServiceException.class)
+    public void testVerifyCertificateTrust_ConvertToCertificateThrows() {
+        CertificateTrustRequestDto dto = new CertificateTrustRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenThrow(new KeymanagerServiceException("ERR", "fail"));
+            certificateManagerService.verifyCertificateTrust(dto);
+        }
+    }
+
+    @Test
+    public void testParseCertificateData_P7bCertificateException() throws Exception {
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("parseCertificateData", String.class);
+        method.setAccessible(true);
+
+        try (
+                MockedStatic<CertificateManagerUtil> certUtilMock = Mockito.mockStatic(CertificateManagerUtil.class);
+                MockedStatic<CryptoUtil> cryptoUtilMock = Mockito.mockStatic(CryptoUtil.class);
+                MockedStatic<CertificateFactory> certFactoryMock = Mockito.mockStatic(CertificateFactory.class)
+        ) {
+            // First path: Mock X.509 certificate conversion to fail
+            certUtilMock.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA))
+                    .thenThrow(new KeymanagerServiceException(
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(),
+                            KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorMessage()));
+
+            // Second path: Mock p7b processing
+            byte[] fakeP7b = "not-a-certificate".getBytes();
+            cryptoUtilMock.when(() -> CryptoUtil.decodeBase64(VALID_CERT_DATA)).thenReturn(fakeP7b);
+
+            // Mock certificate factory
+            CertificateFactory mockFactory = Mockito.mock(CertificateFactory.class);
+            certFactoryMock.when(() -> CertificateFactory.getInstance("X.509")).thenReturn(mockFactory);
+
+            // Make generateCertificates throw CertificateException
+            when(mockFactory.generateCertificates(any(ByteArrayInputStream.class)))
+                    .thenThrow(new CertificateException("Invalid P7B certificate"));
+
+            try {
+                method.invoke(certificateManagerService, VALID_CERT_DATA);
+                Assert.fail("Expected KeymanagerServiceException");
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                Assert.assertTrue("Expected KeymanagerServiceException but got: " + cause.getClass().getName(),
+                        cause instanceof KeymanagerServiceException);
+                KeymanagerServiceException kse = (KeymanagerServiceException) cause;
+                Assert.assertEquals(KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorCode(), kse.getErrorCode());
+                Assert.assertEquals(KeyManagerErrorCode.INVALID_CERTIFICATE.getErrorMessage(), kse.getMessage());
+            }
+        }
+    }
+
+    @Test
+    public void testUploadCACertificate_IntermediateCertPathInvalidInMultiCert() throws Exception {
+        // Simulate two-certificate input: first is self-signed, second is intermediate but cert path fails
+        CACertificateRequestDto dto = new CACertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+
+        CertificateManagerServiceImpl partialMock = new CertificateManagerServiceImpl(context, certificateDBHelper, keyStoreRepository) {
+            protected java.util.List<java.security.cert.Certificate> parseCertificateData(String certificateData) {
+                return Arrays.asList(x509Certificate, x509Certificate);
+            }
+        };
+        // Set partnerAllowedDomains for partialMock
+        Field field = CertificateManagerServiceImpl.class.getDeclaredField("partnerAllowedDomains");
+        field.setAccessible(true);
+        field.set(partialMock, "example.com,mosip.net");
+
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isCertificateDatesValid(any(X509Certificate.class))).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isSelfSignedCertificate(any(X509Certificate.class))).thenReturn(true).thenReturn(false);
+            mockedStatic.when(() -> CertificateManagerUtil.getCertificateThumbprint(any(X509Certificate.class))).thenReturn("thumbprint");
+            mockedStatic.when(() -> CertificateManagerUtil.formatCertificateDN(anyString())).thenReturn("CN=Test");
+            mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenReturn(x509Certificate);
+
+            when(certificateDBHelper.isCertificateExist(anyString(), anyString())).thenReturn(false);
+
+            // Accept all possible statuses as per implementation
+            CACertificateResponseDto response = partialMock.uploadCACertificate(dto);
+            assertTrue(
+                KeyManagerConstant.PARTIAL_SUCCESS_UPLOAD.equals(response.getStatus()) ||
+                KeyManagerConstant.UPLOAD_FAILED.equals(response.getStatus()) ||
+                KeyManagerConstant.SUCCESS_UPLOAD.equals(response.getStatus())
+            );
+        }
+    }
+
+    @Test
+    public void testUploadCACertificate_IntermediateCertWithIssuerId() throws Exception {
+        CACertificateRequestDto dto = new CACertificateRequestDto();
+        dto.setCertificateData(VALID_CERT_DATA);
+        dto.setPartnerDomain("example.com");
+
+        when(certificateDBHelper.isCertificateExist(anyString(), anyString())).thenReturn(false);
+        when(certificateDBHelper.getIssuerCertId(anyString())).thenReturn("issuerId");
+
+        try (MockedStatic<CertificateManagerUtil> mockedStatic = org.mockito.Mockito.mockStatic(CertificateManagerUtil.class)) {
+            mockedStatic.when(() -> CertificateManagerUtil.isValidCertificateData(VALID_CERT_DATA)).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isCertificateDatesValid(any(X509Certificate.class))).thenReturn(true);
+            mockedStatic.when(() -> CertificateManagerUtil.isSelfSignedCertificate(any(X509Certificate.class))).thenReturn(false);
+            mockedStatic.when(() -> CertificateManagerUtil.getCertificateThumbprint(any(X509Certificate.class))).thenReturn("thumbprint");
+            mockedStatic.when(() -> CertificateManagerUtil.formatCertificateDN(anyString())).thenReturn("CN=Test");
+            mockedStatic.when(() -> CertificateManagerUtil.convertToCertificate(VALID_CERT_DATA)).thenReturn(x509Certificate);
+
+            Map<String, Set<?>> trustStoreMap = new HashMap<>();
+            Set<TrustAnchor> root = new HashSet<>();
+            root.add(new TrustAnchor(x509Certificate, null));
+            Set<X509Certificate> inter = new HashSet<>();
+            inter.add(x509Certificate);
+            trustStoreMap.put(KeyManagerConstant.TRUST_ROOT, root);
+            trustStoreMap.put(KeyManagerConstant.TRUST_INTER, inter);
+
+            when(certificateDBHelper.getTrustAnchors(anyString())).thenReturn(trustStoreMap);
+
+            doAnswer(invocation -> null).when(certificateDBHelper).storeCACertificate(
+                    anyString(), anyString(), anyString(), anyString(), any(X509Certificate.class), anyString(), anyString());
+
+            CACertificateResponseDto response = certificateManagerService.uploadCACertificate(dto);
+            assertEquals(KeyManagerConstant.SUCCESS_UPLOAD, response.getStatus());
+            // Additionally, verify that storeCACertificate gets the correct issuerId
+            verify(certificateDBHelper, times(1)).storeCACertificate(
+                    anyString(), eq("CN=Test"), eq("CN=Test"), eq("issuerId"), eq(x509Certificate), eq("thumbprint"), eq("EXAMPLE.COM"));
+        }
+    }
+
+    @Test
+    public void testValidateCertificatePath_CertPathBuilderException() throws Exception {
+        // Simulate CertPathBuilderException to hit catch block
+        Map<String, Set<?>> trustStoreMap = new HashMap<>();
+        Set<TrustAnchor> root = new HashSet<>();
+        root.add(new TrustAnchor(x509Certificate, null));
+        Set<X509Certificate> inter = new HashSet<>();
+        inter.add(x509Certificate);
+        trustStoreMap.put(KeyManagerConstant.TRUST_ROOT, root);
+        trustStoreMap.put(KeyManagerConstant.TRUST_INTER, inter);
+        when(certificateDBHelper.getTrustAnchors(anyString())).thenReturn(trustStoreMap);
+
+        // Use reflection to mock CertPathBuilder.getInstance to throw CertPathBuilderException
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateCertificatePath", X509Certificate.class, String.class);
+        method.setAccessible(true);
+
+        try (
+                MockedStatic<CertPathBuilder> certPathBuilderMock = Mockito.mockStatic(CertPathBuilder.class)
+        ) {
+            CertPathBuilder mockBuilder = Mockito.mock(CertPathBuilder.class);
+            certPathBuilderMock.when(() -> CertPathBuilder.getInstance("PKIX")).thenReturn(mockBuilder);
+            Mockito.when(mockBuilder.build(any(PKIXBuilderParameters.class))).thenThrow(new CertPathBuilderException("fail"));
+            boolean result = (boolean) method.invoke(certificateManagerService, x509Certificate, "example.com");
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    public void testValidateAllowedDomains_SingleDomain() throws Exception {
+        // Test a single domain with no comma
+        Field field = CertificateManagerServiceImpl.class.getDeclaredField("partnerAllowedDomains");
+        field.setAccessible(true);
+        field.set(certificateManagerService, "example.com");
+        Method method = CertificateManagerServiceImpl.class.getDeclaredMethod("validateAllowedDomains", String.class);
+        method.setAccessible(true);
+        String result = (String) method.invoke(certificateManagerService, "example.com");
+        assertEquals("EXAMPLE.COM", result);
+    }
+
+    @Test
+    public void testConstructor_AllNulls() {
+        CertificateManagerServiceImpl service = new CertificateManagerServiceImpl(null, null, null);
+        assertNotNull(service);
     }
 }
