@@ -346,7 +346,7 @@ public class IdentitySchemaRepositoryTest {
         File schemaFile = new File(testDirectory, "schema_1.0");
 
         List<FieldSpecDto> fields = Arrays.asList(new FieldSpecDto());
-        ScreenSpecDto screen = new ScreenSpecDto("Screen1", new HashMap<>(), fields, 1, true);
+        ScreenSpecDto screen = new ScreenSpecDto("Screen1", new HashMap<>(), fields, 1, true,false);
         ProcessSpecDto processSpecDto = new ProcessSpecDto("NEW", 1, "NEW", true, new HashMap<>(), new HashMap<>(), "icon.png", null, null);
         processSpecDto.setScreens(Arrays.asList(screen));
 
@@ -449,7 +449,7 @@ public class IdentitySchemaRepositoryTest {
         File processSpecFile = new File(testDirectory, "NEW");
 
         List<FieldSpecDto> fields = Arrays.asList(new FieldSpecDto());
-        ScreenSpecDto screen = new ScreenSpecDto("Screen1", new HashMap<>(), fields, 1, true);
+        ScreenSpecDto screen = new ScreenSpecDto("Screen1", new HashMap<>(), fields, 1, true, false);
         ProcessSpecDto processSpecDto = new ProcessSpecDto("NEW", 1, "NEW", true, new HashMap<>(), new HashMap<>(), "icon.png", null, null);
         processSpecDto.setScreens(Arrays.asList(screen));
         String schemaJson = JsonUtils.javaObjectToJsonString(processSpecDto);

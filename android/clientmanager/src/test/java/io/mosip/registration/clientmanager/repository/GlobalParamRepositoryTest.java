@@ -51,7 +51,7 @@ public class GlobalParamRepositoryTest {
                 .build();
 
         GlobalParamDao globalParamDao = clientDatabase.globalParamDao();
-        globalParamRepository = new GlobalParamRepository(globalParamDao);
+        globalParamRepository = new GlobalParamRepository(globalParamDao,null);
     }
 
     @After

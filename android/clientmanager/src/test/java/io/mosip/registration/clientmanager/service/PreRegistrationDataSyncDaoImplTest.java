@@ -11,7 +11,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import io.mosip.registration.clientmanager.dao.PreRegistrationDataSyncRepositoryDao;
@@ -70,7 +72,9 @@ public class PreRegistrationDataSyncDaoImplTest {
         when(preRegistrationRepositoryDao.findByAppointmentDateBeforeAndIsDeleted("2024-01-01", false))
                 .thenReturn(mockList);
 
-        List<PreRegistrationList> result = preRegistrationDataSyncDao.fetchRecordsToBeDeleted("2024-01-01");
+        Date startDate = Date.from(Instant.ofEpochSecond(2024-01-01));
+
+        List<PreRegistrationList> result = preRegistrationDataSyncDao.fetchRecordsToBeDeleted(startDate);
 
         assertEquals(2, result.size());
         verify(preRegistrationRepositoryDao, times(1)).findByAppointmentDateBeforeAndIsDeleted("2024-01-01", false);

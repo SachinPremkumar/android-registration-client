@@ -104,6 +104,8 @@ public class AppModuleTest {
 
     @Mock LocalConfigDAO localConfigDAO;
 
+    @Mock LocationValidationService locationValidationService;
+
     private AppModule appModule;
 
     @Before
@@ -180,7 +182,7 @@ public class AppModuleTest {
     public void testProvideRegistrationService() {
         RegistrationService service = appModule.provideRegistrationService(
                 packetWriterService, registrationRepository, mock(MasterDataService.class), identitySchemaRepository,
-                clientCryptoManagerService, keyStoreRepository, globalParamRepository, auditManagerService,preRegistrationDataSyncServiceProvider,biometricService
+                clientCryptoManagerService, keyStoreRepository, globalParamRepository, auditManagerService,registrationCenterRepository,locationValidationService, preRegistrationDataSyncServiceProvider,biometricService
         );
         assertNotNull(service);
         assertTrue(service instanceof RegistrationServiceImpl);
