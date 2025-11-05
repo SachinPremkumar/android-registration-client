@@ -69,15 +69,19 @@ public class PreRegistrationDataSyncDaoImplTest {
     @Test
     public void testFetchRecordsToBeDeleted() {
         List<PreRegistrationList> mockList = Arrays.asList(new PreRegistrationList(), new PreRegistrationList());
-        when(preRegistrationRepositoryDao.findByAppointmentDateBeforeAndIsDeleted("2024-01-01", false))
+        
+        // Create a Date object for 2024-01-01
+        Date startDate = Date.from(Instant.parse("2024-01-01T00:00:00Z"));
+        // Date.toString() produces format like "Mon Jan 01 00:00:00 GMT 2024"
+        String dateString = startDate.toString();
+        
+        when(preRegistrationRepositoryDao.findByAppointmentDateBeforeAndIsDeleted(dateString, false))
                 .thenReturn(mockList);
-
-        Date startDate = Date.from(Instant.ofEpochSecond(2024-01-01));
 
         List<PreRegistrationList> result = preRegistrationDataSyncDao.fetchRecordsToBeDeleted(startDate);
 
         assertEquals(2, result.size());
-        verify(preRegistrationRepositoryDao, times(1)).findByAppointmentDateBeforeAndIsDeleted("2024-01-01", false);
+        verify(preRegistrationRepositoryDao, times(1)).findByAppointmentDateBeforeAndIsDeleted(dateString, false);
     }
 
     @Test

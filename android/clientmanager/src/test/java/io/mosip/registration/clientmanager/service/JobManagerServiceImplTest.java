@@ -85,8 +85,20 @@ public class JobManagerServiceImplTest {
     @Test
     public void getNextSyncTime_Test() {
         int jobId = 1;
-        long lastSyncTime = 1609459200L;  // Example timestamp
-        long nextSyncTime = lastSyncTime + 15 * 60;
+        // Note: Based on the implementation, getLastSyncTime returns milliseconds (despite variable name)
+        // JOB_PERIODIC_SECONDS = (15 * 60) * 1000 = 900000 milliseconds
+        // So nextSyncTime = lastSyncTime + JOB_PERIODIC_SECONDS
+        long lastSyncTime = 1732530600000L;  // Example timestamp in milliseconds (Nov 27, 2024 00:00:00)
+        long nextSyncTime = lastSyncTime + (15 * 60 * 1000L); // Add 15 minutes in milliseconds
+
+        // Mock repository to return a job def with jobId 1 that has an invalid cron expression
+        // This will make getNextSyncTime use the fallback calculation
+        SyncJobDef jobDef = new SyncJobDef("00001"); // Last 5 chars = "00001" = jobId 1
+        jobDef.setId("00001");
+        jobDef.setSyncFreq("15"); // Invalid cron expression, will use fallback
+        List<SyncJobDef> jobDefList = new ArrayList<>();
+        jobDefList.add(jobDef);
+        when(mockSyncJobDefRepository.getAllSyncJobDefList()).thenReturn(jobDefList);
 
         when(mockJobTransactionService.getLastSyncTime(jobId)).thenReturn(lastSyncTime);
         when(mockDateUtil.getDateTime(nextSyncTime)).thenReturn("2024-11-27 00:15:00");

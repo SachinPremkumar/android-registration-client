@@ -5,10 +5,13 @@ import android.content.Context;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import javax.inject.Provider;
@@ -42,10 +45,14 @@ import io.mosip.registration.packetmanager.service.PosixAdapterServiceImpl;
 import io.mosip.registration.packetmanager.spi.IPacketCryptoService;
 import io.mosip.registration.packetmanager.spi.ObjectAdapterService;
 import io.mosip.registration.packetmanager.spi.PacketWriterService;
+import io.mosip.registration.packetmanager.util.ConfigService;
 import io.mosip.registration.packetmanager.util.PacketKeeper;
 import io.mosip.registration.packetmanager.util.PacketManagerHelper;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 
@@ -107,12 +114,30 @@ public class AppModuleTest {
     @Mock LocationValidationService locationValidationService;
 
     private AppModule appModule;
+    private MockedStatic<ConfigService> configServiceMock;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(mockApplication.getApplicationContext()).thenReturn(mockContext);
         appModule = new AppModule(mockApplication);
+        
+        // Mock ConfigService static methods
+        // Return null for non-null contexts, throw NPE for null contexts to allow proper error handling
+        configServiceMock = Mockito.mockStatic(ConfigService.class);
+        // First match null contexts and throw NPE
+        configServiceMock.when(() -> ConfigService.getProperty(anyString(), isNull()))
+                .thenThrow(new NullPointerException());
+        // Then match any non-null context and return null
+        configServiceMock.when(() -> ConfigService.getProperty(anyString(), any(Context.class)))
+                .thenReturn(null);
+    }
+
+    @After
+    public void tearDown() {
+        if (configServiceMock != null) {
+            configServiceMock.close();
+        }
     }
 
     @Test

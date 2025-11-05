@@ -17,13 +17,19 @@ import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.mosip.registration.clientmanager.config.ClientDatabase;
 import io.mosip.registration.clientmanager.constant.RegistrationConstants;
 import io.mosip.registration.clientmanager.dao.GlobalParamDao;
+import io.mosip.registration.clientmanager.dao.LocalConfigDAO;
 import io.mosip.registration.clientmanager.entity.GlobalParam;
 import io.mosip.registration.clientmanager.repository.GlobalParamRepository;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 public class GlobalParamRepositoryTest {
@@ -42,6 +48,7 @@ public class GlobalParamRepositoryTest {
     Context appContext;
     ClientDatabase clientDatabase;
     GlobalParamRepository globalParamRepository;
+    LocalConfigDAO mockLocalConfigDAO;
 
     @Before
     public void setUp() {
@@ -51,7 +58,10 @@ public class GlobalParamRepositoryTest {
                 .build();
 
         GlobalParamDao globalParamDao = clientDatabase.globalParamDao();
-        globalParamRepository = new GlobalParamRepository(globalParamDao,null);
+        // Mock LocalConfigDAO to avoid NullPointerException in refreshConfigurationCache()
+        mockLocalConfigDAO = mock(LocalConfigDAO.class);
+        when(mockLocalConfigDAO.getLocalConfigurations()).thenReturn(new HashMap<String, String>());
+        globalParamRepository = new GlobalParamRepository(globalParamDao, mockLocalConfigDAO);
     }
 
     @After
