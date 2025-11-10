@@ -176,9 +176,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("containerPath123");
-        Registration mockRegistration = mock(Registration.class);
-        when(registrationRepository.insertRegistration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), eq(""), eq(""), eq("34259236291839"))).thenReturn(mockRegistration);
-
         registrationService.submitRegistrationDto("100006");
     }
 
@@ -728,8 +725,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("containerPath123");
-        Registration mockRegistration = mock(Registration.class);
-        when(registrationRepository.insertRegistration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), eq(""), eq(""), eq("34259236291839"))).thenReturn(mockRegistration);
         // Fix: Set BIO_DEVICES field on biometricService mock
         Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
         bioDevicesServiceField.setAccessible(true);
@@ -786,8 +781,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("containerPath123");
-        Registration mockRegistration = mock(Registration.class);
-        when(registrationRepository.insertRegistration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), eq(""), eq(""), eq("34259236291839"))).thenReturn(mockRegistration);
         // Fix: Set BIO_DEVICES field on biometricService mock
         Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
         bioDevicesServiceField.setAccessible(true);
@@ -844,8 +837,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("containerPath123");
-        Registration mockRegistration = mock(Registration.class);
-        when(registrationRepository.insertRegistration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), eq(""), eq(""), eq("34259236291839"))).thenReturn(mockRegistration);
         // Fix: Set BIO_DEVICES field on biometricService mock
         Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
         bioDevicesServiceField.setAccessible(true);
@@ -902,8 +893,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("containerPath123");
-        Registration mockRegistration = mock(Registration.class);
-        when(registrationRepository.insertRegistration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), eq(""), eq(""), eq("34259236291839"))).thenReturn(mockRegistration);
         // Fix: Set BIO_DEVICES field on biometricService mock
         Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
         bioDevicesServiceField.setAccessible(true);
@@ -960,9 +949,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("");
-        Registration mockRegistration = mock(Registration.class);
-        // Use lenient stubbing since actual arguments may differ (nulls vs empty strings)
-        Mockito.lenient().when(registrationRepository.insertRegistration(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(mockRegistration);
         // Fix: Set BIO_DEVICES field on biometricService mock
         Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
         bioDevicesServiceField.setAccessible(true);
@@ -1221,8 +1207,6 @@ public class RegistrationServiceImplTest {
         when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
         when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
         when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString())).thenReturn("containerPath123");
-        Registration mockRegistration = mock(Registration.class);
-        when(registrationRepository.insertRegistration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), eq(""), eq(""), eq("34259236291839"))).thenReturn(mockRegistration);
         // Fix: Set BIO_DEVICES field on biometricService mock
         Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
         bioDevicesServiceField.setAccessible(true);
