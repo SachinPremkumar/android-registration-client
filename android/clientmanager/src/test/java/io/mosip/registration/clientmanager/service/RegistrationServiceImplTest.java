@@ -7,11 +7,13 @@ import io.mosip.registration.clientmanager.constant.RegistrationConstants;
 import io.mosip.registration.clientmanager.dto.CenterMachineDto;
 import io.mosip.registration.clientmanager.dto.registration.RegistrationDto;
 import io.mosip.registration.clientmanager.entity.Audit;
+import io.mosip.registration.clientmanager.entity.PreRegistrationList;
 import io.mosip.registration.clientmanager.exception.ClientCheckedException;
 import io.mosip.registration.clientmanager.repository.GlobalParamRepository;
 import io.mosip.registration.clientmanager.repository.IdentitySchemaRepository;
 import io.mosip.registration.clientmanager.repository.RegistrationCenterRepository;
 import io.mosip.registration.clientmanager.repository.RegistrationRepository;
+import io.mosip.registration.clientmanager.dto.ResponseDto;
 import io.mosip.registration.clientmanager.spi.AuditManagerService;
 import io.mosip.registration.clientmanager.spi.LocationValidationService;
 import io.mosip.registration.clientmanager.spi.MasterDataService;
@@ -31,11 +33,15 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import io.mosip.registration.clientmanager.constant.Modality;
 import io.mosip.registration.clientmanager.dto.registration.BiometricsDto;
+import io.mosip.registration.clientmanager.dto.registration.GeoLocationDto;
 import io.mosip.registration.clientmanager.dto.uispec.FieldSpecDto;
 import io.mosip.registration.clientmanager.entity.Registration;
+import io.mosip.registration.clientmanager.entity.RegistrationCenter;
 import io.mosip.registration.packetmanager.cbeffutil.jaxbclasses.BIR;
+import io.mosip.registration.packetmanager.dto.PacketWriter.BiometricRecord;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,11 +52,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.mockito.ArgumentCaptor;
+
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import javax.inject.Provider;
@@ -87,6 +97,8 @@ public class RegistrationServiceImplTest {
     private Provider<PreRegistrationDataSyncService> preRegistrationDataSyncServiceProvider;
     @Mock
     private Biometrics095Service biometricService;
+    @Mock
+    private PreRegistrationDataSyncService preRegistrationDataSyncService;
 
     @Before
     public void setUp() {
@@ -95,6 +107,7 @@ public class RegistrationServiceImplTest {
         when(mockSharedPreferences.edit()).thenReturn(editor);
         when(mockApplicationContext.getString(anyInt())).thenReturn("Registration Client");
         when(mockApplicationContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockSharedPreferences);
+        when(preRegistrationDataSyncServiceProvider.get()).thenReturn(preRegistrationDataSyncService);
         registrationService = new RegistrationServiceImpl(mockApplicationContext, packetWriterService,
                 registrationRepository, masterDataService, identitySchemaRepository, clientCryptoManagerService,
                 keyStoreRepository, globalParamRepository, auditManagerService,registrationCenterRepository,locationValidationService, preRegistrationDataSyncServiceProvider, biometricService);
@@ -1563,6 +1576,240 @@ public class RegistrationServiceImplTest {
         List<Map<String, String>> audits = ((RegistrationServiceImpl)registrationService).getAudits();
         assertNotNull(audits);
         assertTrue(audits.isEmpty());
+    }
+
+    @Test
+    // Test for validateLocation when distance exceeds allowed threshold
+    public void testValidateLocation_DistanceExceedsThrowsClientCheckedException() throws Exception {
+        RegistrationDto dto = mock(RegistrationDto.class);
+        GeoLocationDto geoLocationDto = new GeoLocationDto(77.0d, 12.0d);
+        when(dto.getGeoLocationDto()).thenReturn(geoLocationDto);
+
+        Field regDtoField = registrationService.getClass().getDeclaredField("registrationDto");
+        regDtoField.setAccessible(true);
+        regDtoField.set(registrationService, dto);
+
+        when(globalParamRepository.getCachedStringGpsDeviceEnableFlag()).thenReturn("N");
+        CenterMachineDto centerMachineDto = new CenterMachineDto();
+        centerMachineDto.setCenterId("CENTER");
+        when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
+
+        RegistrationCenter center = new RegistrationCenter("CENTER", "eng");
+        center.setLatitude("12.0");
+        center.setLongitude("77.1");
+        when(registrationCenterRepository.getRegistrationCenter("CENTER"))
+                .thenReturn(Collections.singletonList(center));
+
+        when(globalParamRepository.getCachedStringMachineToCenterDistance()).thenReturn("1.0");
+        when(locationValidationService.getDistance(anyDouble(), anyDouble(), anyDouble(), anyDouble())).thenReturn(5.0);
+
+        Method validateLocation = registrationService.getClass().getDeclaredMethod("validateLocation");
+        validateLocation.setAccessible(true);
+
+        try {
+            validateLocation.invoke(registrationService);
+            fail("Expected ClientCheckedException");
+        } catch (InvocationTargetException e) {
+            assertTrue(e.getCause() instanceof ClientCheckedException);
+        } finally {
+            regDtoField.set(registrationService, null);
+        }
+    }
+
+    @Test
+    // Test for validateLocation when center coordinates are invalid
+    public void testValidateLocation_InvalidCenterCoordinatesIgnored() throws Exception {
+        RegistrationDto dto = mock(RegistrationDto.class);
+        GeoLocationDto geoLocationDto = new GeoLocationDto(77.0d, 12.0d);
+        when(dto.getGeoLocationDto()).thenReturn(geoLocationDto);
+
+        Field regDtoField = registrationService.getClass().getDeclaredField("registrationDto");
+        regDtoField.setAccessible(true);
+        regDtoField.set(registrationService, dto);
+
+        when(globalParamRepository.getCachedStringGpsDeviceEnableFlag()).thenReturn("N");
+        CenterMachineDto centerMachineDto = new CenterMachineDto();
+        centerMachineDto.setCenterId("CENTER");
+        when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
+
+        RegistrationCenter center = new RegistrationCenter("CENTER", "eng");
+        center.setLatitude("invalid");
+        center.setLongitude("77.1");
+        when(registrationCenterRepository.getRegistrationCenter("CENTER"))
+                .thenReturn(Collections.singletonList(center));
+
+        Method validateLocation = registrationService.getClass().getDeclaredMethod("validateLocation");
+        validateLocation.setAccessible(true);
+
+        validateLocation.invoke(registrationService);
+
+        regDtoField.set(registrationService, null);
+    }
+
+    @Test
+    // Test for validateLocation when geo location is not available
+    public void testValidateLocation_NoGeoLocationSkipsValidation() throws Exception {
+        RegistrationDto dto = mock(RegistrationDto.class);
+        when(dto.getGeoLocationDto()).thenReturn(null);
+
+        Field regDtoField = registrationService.getClass().getDeclaredField("registrationDto");
+        regDtoField.setAccessible(true);
+        regDtoField.set(registrationService, dto);
+
+        when(globalParamRepository.getCachedStringGpsDeviceEnableFlag()).thenReturn("N");
+
+        Method validateLocation = registrationService.getClass().getDeclaredMethod("validateLocation");
+        validateLocation.setAccessible(true);
+
+        validateLocation.invoke(registrationService);
+
+        regDtoField.set(registrationService, null);
+    }
+
+    @Test
+    // Test for validateLocation when max allowed distance is missing
+    public void testValidateLocation_MissingMaxDistanceThrowsClientCheckedException() throws Exception {
+        RegistrationDto dto = mock(RegistrationDto.class);
+        GeoLocationDto geoLocationDto = new GeoLocationDto(77.0d, 12.0d);
+        when(dto.getGeoLocationDto()).thenReturn(geoLocationDto);
+
+        Field regDtoField = registrationService.getClass().getDeclaredField("registrationDto");
+        regDtoField.setAccessible(true);
+        regDtoField.set(registrationService, dto);
+
+        when(globalParamRepository.getCachedStringGpsDeviceEnableFlag()).thenReturn("N");
+        CenterMachineDto centerMachineDto = new CenterMachineDto();
+        centerMachineDto.setCenterId("CENTER");
+        when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
+
+        RegistrationCenter center = new RegistrationCenter("CENTER", "eng");
+        center.setLatitude("12.0");
+        center.setLongitude("77.1");
+        when(registrationCenterRepository.getRegistrationCenter("CENTER"))
+                .thenReturn(Collections.singletonList(center));
+
+        when(globalParamRepository.getCachedStringMachineToCenterDistance()).thenReturn(null);
+
+        Method validateLocation = registrationService.getClass().getDeclaredMethod("validateLocation");
+        validateLocation.setAccessible(true);
+
+        try {
+            validateLocation.invoke(registrationService);
+            fail("Expected ClientCheckedException");
+        } catch (InvocationTargetException e) {
+            assertTrue(e.getCause() instanceof ClientCheckedException);
+        } finally {
+            regDtoField.set(registrationService, null);
+        }
+    }
+
+    @Test
+    // Test for submitRegistrationDto deleting pre-registration records when preRegistrationId present
+    public void testSubmitRegistrationDto_DeletesPreRegistrationRecord() throws Exception {
+        RegistrationDto dto = Mockito.mock(RegistrationDto.class, Mockito.withSettings().lenient());
+        Field regDtoField = registrationService.getClass().getDeclaredField("registrationDto");
+        regDtoField.setAccessible(true);
+        regDtoField.set(registrationService, dto);
+
+        Map<String, Object> demographics = new HashMap<>();
+        when(dto.getDemographics()).thenReturn(demographics);
+        when(dto.getFlowType()).thenReturn("NEW");
+        when(dto.getRId()).thenReturn("RID-PRE");
+        when(dto.getAllDocumentFields()).thenReturn(Collections.emptySet());
+        when(dto.getSchemaVersion()).thenReturn(1.0);
+        when(dto.getProcess()).thenReturn("NEW");
+        when(dto.getSelectedLanguages()).thenReturn(Collections.singletonList("eng"));
+        when(dto.getBiometrics()).thenReturn(new HashMap<>());
+        when(dto.getAdditionalInfoRequestId()).thenReturn(null);
+        when(dto.getPreRegistrationId()).thenReturn("pre123");
+        when(dto.getGeoLocationDto()).thenReturn(null);
+        when(dto.getPacketId()).thenReturn(null);
+        when(dto.getApplicationId()).thenReturn(null);
+        when(dto.getBestBiometrics(Mockito.anyString(), Mockito.any(Modality.class))).thenReturn(Collections.emptyList());
+
+        java.lang.reflect.Field capturedBioFieldsField = dto.getClass().getField("CAPTURED_BIO_FIELDS");
+        capturedBioFieldsField.set(dto, Collections.emptySet());
+        java.lang.reflect.Field bioDevicesField = dto.getClass().getField("BIO_DEVICES");
+        bioDevicesField.set(dto, new HashMap<>());
+        java.lang.reflect.Field exceptionsField = dto.getClass().getField("EXCEPTIONS");
+        exceptionsField.set(dto, new HashMap<>());
+
+        when(globalParamRepository.getSelectedHandles()).thenReturn(Collections.singletonList("handle1"));
+        when(globalParamRepository.getCachedStringGpsDeviceEnableFlag()).thenReturn("Y");
+        when(globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.AUDIT_EXPORTED_TILL)).thenReturn("0");
+        when(globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.INDIVIDUAL_BIOMETRICS_ID)).thenReturn("bioField");
+        when(globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.SERVER_VERSION)).thenReturn("2.0.0");
+        when(globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.AUDIT_EXPORTED_TILL)).thenReturn("0");
+        when(globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.SERVER_VERSION)).thenReturn("2.0.0");
+        when(globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.INDIVIDUAL_BIOMETRICS_ID)).thenReturn("bioField");
+
+        CenterMachineDto centerMachineDto = new CenterMachineDto();
+        centerMachineDto.setCenterId("centerId");
+        centerMachineDto.setMachineId("machineId");
+        centerMachineDto.setMachineRefId("center_machine");
+        when(masterDataService.getRegistrationCenterMachineDetails()).thenReturn(centerMachineDto);
+
+        when(identitySchemaRepository.getSchemaJson(Mockito.any(), Mockito.anyDouble())).thenReturn("{}");
+        when(packetWriterService.persistPacket(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString()))
+                .thenReturn("path/to/packet.zip");
+
+        Field bioDevicesServiceField = biometricService.getClass().getDeclaredField("BIO_DEVICES");
+        bioDevicesServiceField.setAccessible(true);
+        bioDevicesServiceField.set(biometricService, new HashMap<>());
+
+        PreRegistrationList preRegistrationList = new PreRegistrationList();
+        preRegistrationList.setId("pre-id");
+        when(preRegistrationDataSyncService.getPreRegistrationRecordForDeletion("pre123")).thenReturn(preRegistrationList);
+
+        registrationService.submitRegistrationDto("maker");
+
+        verify(preRegistrationDataSyncService).getPreRegistrationRecordForDeletion("pre123");
+        ArgumentCaptor<List> listCaptor = ArgumentCaptor.forClass(List.class);
+        verify(preRegistrationDataSyncService).deletePreRegRecords(Mockito.any(ResponseDto.class), listCaptor.capture());
+        List captured = listCaptor.getValue();
+        assertNotNull(captured);
+        assertTrue(captured.contains(preRegistrationList));
+        verify(dto).cleanup();
+
+        regDtoField.set(registrationService, null);
+    }
+
+    @Test
+    // Test for setBiometrics adding biometric record and meta information
+    public void testSetBiometrics_AddsBiometricRecordAndMetaInfo() throws Exception {
+        Map<Modality, Integer> thresholds = new HashMap<>();
+        RegistrationDto concreteDto = new RegistrationDto("RIDBIO", "NEW", "NEW", 1.0,
+                new ArrayList<>(Collections.singletonList("eng")), thresholds, "RIDBIO");
+
+        BiometricsDto biometricsDto = new BiometricsDto();
+        biometricsDto.setModality(Modality.FACE.getSingleType().value());
+        biometricsDto.setBioSubType("FACE");
+        biometricsDto.setBioValue(null);
+        biometricsDto.setDecodedBioResponse("{\"bioValue\":\"abc\"}");
+        biometricsDto.setSignature("sig");
+        biometricsDto.setNumOfRetries(1);
+        biometricsDto.setSdkScore(0.5);
+        biometricsDto.setQualityScore(10f);
+        concreteDto.getBiometrics().put("field_FACE", biometricsDto);
+        concreteDto.CAPTURED_BIO_FIELDS.add("field");
+        concreteDto.EXCEPTIONS.clear();
+
+        Field regDtoField = registrationService.getClass().getDeclaredField("registrationDto");
+        regDtoField.setAccessible(true);
+        regDtoField.set(registrationService, concreteDto);
+
+        Method setBiometrics = registrationService.getClass().getDeclaredMethod("setBiometrics", RegistrationDto.class);
+        setBiometrics.setAccessible(true);
+        setBiometrics.invoke(registrationService, concreteDto);
+
+        ArgumentCaptor<BiometricRecord> recordCaptor = ArgumentCaptor.forClass(BiometricRecord.class);
+        verify(packetWriterService).setBiometric(eq("RIDBIO"), eq("field"), recordCaptor.capture());
+        assertFalse(recordCaptor.getValue().getSegments().isEmpty());
+        verify(packetWriterService).addMetaInfo(eq("RIDBIO"), eq("biometrics"), Mockito.any());
+        verify(packetWriterService).addMetaInfo(eq("RIDBIO"), eq("exceptionBiometrics"), Mockito.any());
+
+        regDtoField.set(registrationService, null);
     }
 
     @Test

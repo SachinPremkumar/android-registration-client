@@ -29,7 +29,7 @@ sonarqube {
         property "sonar.login", "13c9437b3fa54b66de5ec14c4fc2bd04fb55ae77"
         property "sonar.androidLint.reportPaths", "**/reports/lint-results-debug.xml"
 
-        property "sonar.exclusions", "**/src/androidTest/assets/**"
+        property "sonar.exclusions", "**/src/androidTest/assets/**,**/*Pigeon.java,**/pub.dev/**"
         property "sonar.java.binaries", "build/intermediates/javac/debug"
         property "sonar.junit.reportPaths", "build/test-results/testDebugUnitTest"
         property "sonar.coverage.exclusions", "**/dao/**,**/dto/**,**/exception/**,**/spi/**,**/entity/**,**/cbeffutil/**,**/constant/**,**/config/**"

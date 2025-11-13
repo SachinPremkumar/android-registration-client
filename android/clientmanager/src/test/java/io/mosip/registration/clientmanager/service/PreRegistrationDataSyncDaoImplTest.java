@@ -11,8 +11,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -115,5 +118,46 @@ public class PreRegistrationDataSyncDaoImplTest {
 
         assertNull(result);
         verify(preRegistrationRepositoryDao, times(1)).findTopByOrderByLastUpdatedPreRegTimeStampDesc();
+    }
+
+    @Test
+    public void testDeleteAll_Success() {
+        List<PreRegistrationList> items = new ArrayList<>();
+        items.add(new PreRegistrationList());
+
+        preRegistrationDataSyncDao.deleteAll(items);
+
+        verify(preRegistrationRepositoryDao).deleteAll(items);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testDeleteAll_ExceptionWrapping() {
+        List<PreRegistrationList> items = Collections.singletonList(new PreRegistrationList());
+        doThrow(new RuntimeException("db fail")).when(preRegistrationRepositoryDao).deleteAll(items);
+
+        preRegistrationDataSyncDao.deleteAll(items);
+    }
+
+    @Test
+    public void testGetLastPreRegPacketDownloadedTimeAsTimestamp_Success() {
+        PreRegistrationList mockPreReg = new PreRegistrationList();
+        mockPreReg.setLastUpdatedPreRegTimeStamp("2024-03-13 12:00:00");
+        when(preRegistrationRepositoryDao.findTopByOrderByLastUpdatedPreRegTimeStampDesc()).thenReturn(mockPreReg);
+
+        Timestamp timestamp = preRegistrationDataSyncDao.getLastPreRegPacketDownloadedTimeAsTimestamp();
+
+        assertNotNull(timestamp);
+        assertEquals(Timestamp.valueOf("2024-03-13 12:00:00"), timestamp);
+    }
+
+    @Test
+    public void testGetLastPreRegPacketDownloadedTimeAsTimestamp_InvalidFormat() {
+        PreRegistrationList mockPreReg = new PreRegistrationList();
+        mockPreReg.setLastUpdatedPreRegTimeStamp("invalid");
+        when(preRegistrationRepositoryDao.findTopByOrderByLastUpdatedPreRegTimeStampDesc()).thenReturn(mockPreReg);
+
+        Timestamp timestamp = preRegistrationDataSyncDao.getLastPreRegPacketDownloadedTimeAsTimestamp();
+
+        assertNull(timestamp);
     }
 }
