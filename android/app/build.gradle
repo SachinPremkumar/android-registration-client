@@ -35,6 +35,19 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'jacoco'
 
+// Remove all activation dependencies and Jakarta libraries globally
+configurations.all {
+    exclude group: "javax.activation"
+    exclude group: "jakarta.activation"
+    exclude group: "com.sun.activation"
+
+    exclude group: "jakarta.xml.bind"
+    exclude group: "org.eclipse.persistence"   // prevents MOXy (AWT crash)
+    
+    // Exclude xml-apis to avoid duplicate class conflicts with stax-api
+    exclude group: "xml-apis"
+}
+
 android {
     lintOptions {
         abortOnError false
@@ -96,6 +109,7 @@ android {
     packagingOptions {
         resources.merges.add("git.properties")
         resources.excludes.add("META-INF/*")
+        exclude "javax/xml/bind/util/Messages.properties"
     }
     sonar {
         properties {

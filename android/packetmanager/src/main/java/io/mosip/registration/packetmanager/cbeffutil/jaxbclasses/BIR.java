@@ -1,71 +1,95 @@
 package io.mosip.registration.packetmanager.cbeffutil.jaxbclasses;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.simpleframework.xml.*;
+import org.simpleframework.xml.Element;
+import org.simpleframework.xml.ElementList;
+import org.simpleframework.xml.Namespace;
+import org.simpleframework.xml.Order;
+import org.simpleframework.xml.Root;
+import java.util.*;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-
+@Root(name = "BIR", strict = false)
 @Namespace(reference = "http://standards.iso.org/iso-iec/19785/-3/ed-2/")
-@Root(name = "BIR")
-@Data
-@NoArgsConstructor
-public class BIR implements Serializable {
+@Order(elements = {
+        "Version",
+        "CBEFFVersion",
+        "BIRInfo",
+        "BDBInfo",
+        "SBInfo",
+        "BIR",     // nested BIR list
+        "BDB",
+        "SB"
+        // "others" removed - it's optional and may be empty, so don't enforce in @Order
+})
+public class BIR {
 
 	@Element(name = "Version", required = false)
 	private VersionType version;
+
 	@Element(name = "CBEFFVersion", required = false)
-	private VersionType cbeffversion;
-	@Element(name = "BIRInfo", required = false)
+	private VersionType cbeffVersion;
+
+	@Element(name = "BIRInfo", required = true)
 	private BIRInfo birInfo;
+
 	@Element(name = "BDBInfo", required = false)
 	private BDBInfo bdbInfo;
+
+	@Element(name = "SBInfo", required = false)
+	private SBInfo sbInfo;
+
+	@ElementList(name = "BIR", required = false, inline = true)
+	private List<BIR> birs = new ArrayList<>();
+
 	@Element(name = "BDB", required = false)
 	private byte[] bdb;
+
 	@Element(name = "SB", required = false)
 	private byte[] sb;
 
-	@ElementList(required = false, inline = true)
-	protected List<BIR> birs;
-	@Element(name = "SBInfo", required = false)
-	private SBInfo sbInfo;
-	@ElementMap(name = "others", key="key", attribute=true, required = false)
-	private HashMap<String, String> others;
+	@ElementList(name = "others", required = false, inline = true)
+	private List<OthersList> others = new ArrayList<>();
 
-	public BIR(BIRBuilder birBuilder) {
-		this.version = birBuilder.version;
-		this.cbeffversion = birBuilder.cbeffversion;
-		this.birInfo = birBuilder.birInfo;
-		this.bdbInfo = birBuilder.bdbInfo;
-		this.bdb = birBuilder.bdb;
-		this.sb = birBuilder.sb;
-		this.sbInfo = birBuilder.sbInfo;
-		this.others = birBuilder.others;
-	}
+	// Getters & Setters
+	public VersionType getVersion() { return version; }
+	public void setVersion(VersionType value) { this.version = value; }
+
+	public VersionType getCbeffVersion() { return cbeffVersion; }
+	public void setCbeffVersion(VersionType value) { this.cbeffVersion = value; }
+
+	public BIRInfo getBirInfo() { return birInfo; }
+	public void setBirInfo(BIRInfo value) { this.birInfo = value; }
+
+	public BDBInfo getBdbInfo() { return bdbInfo; }
+	public void setBdbInfo(BDBInfo value) { this.bdbInfo = value; }
+
+	public SBInfo getSbInfo() { return sbInfo; }
+	public void setSbInfo(SBInfo value) { this.sbInfo = value; }
+
+	public List<BIR> getBirs() { return birs; }
+	public void setBirs(List<BIR> birs) { this.birs = birs; }
+
+	public byte[] getBdb() { return bdb; }
+	public void setBdb(byte[] bdb) { this.bdb = bdb; }
+
+	public byte[] getSb() { return sb; }
+	public void setSb(byte[] sb) { this.sb = sb; }
+
+	public List<OthersList> getOthers() { return others; }
+	public void setOthers(List<OthersList> others) { this.others = others; }
 
 	public static class BIRBuilder {
+		private byte[] bdb;
 		private VersionType version;
-		private VersionType cbeffversion;
+		private VersionType cbeffVersion;
 		private BIRInfo birInfo;
 		private BDBInfo bdbInfo;
-		private byte[] bdb;
-		private byte[] sb;
 		private SBInfo sbInfo;
-		private HashMap<String, String> others = new HashMap<>();
+		private byte[] sb;
+		private List<BIR> birs = new ArrayList<>();
+		private HashMap<String, String> othersMap = new HashMap<>();
 
-		public BIRBuilder withOthers(HashMap<String, String> others) {
-			this.others = others;
-			return this;
-		}
-
-		public BIRBuilder withOthers(String key, String value) {
-			if(Objects.isNull(this.others))
-				this.others = new HashMap<>();
-			else
-				this.others.put(key, value);
+		public BIRBuilder withBdb(byte[] bdb) {
+			this.bdb = bdb;
 			return this;
 		}
 
@@ -74,8 +98,8 @@ public class BIR implements Serializable {
 			return this;
 		}
 
-		public BIRBuilder withCbeffversion(VersionType cbeffversion) {
-			this.cbeffversion = cbeffversion;
+		public BIRBuilder withCbeffversion(VersionType cbeffVersion) {
+			this.cbeffVersion = cbeffVersion;
 			return this;
 		}
 
@@ -89,25 +113,61 @@ public class BIR implements Serializable {
 			return this;
 		}
 
-		public BIRBuilder withBdb(byte[] bdb) {
-			this.bdb = bdb;
-			return this;
-		}
-
-		public BIRBuilder withSb(byte[] sb) {
-			this.sb = sb == null ? new byte[0] : sb;
-			return this;
-		}
-
 		public BIRBuilder withSbInfo(SBInfo sbInfo) {
 			this.sbInfo = sbInfo;
 			return this;
 		}
 
-		public BIR build() {
-			return new BIR(this);
+		public BIRBuilder withSb(byte[] sb) {
+			this.sb = sb;
+			return this;
 		}
 
-	}
+		public BIRBuilder withBirs(List<BIR> birs) {
+			if (birs != null) {
+				this.birs = birs;
+			}
+			return this;
+		}
 
+		public BIRBuilder withOthers(String key, String value) {
+			if (key != null) {
+				this.othersMap.put(key, value != null ? value : "");
+			}
+			return this;
+		}
+
+		public BIRBuilder withOthers(HashMap<String, String> others) {
+			if (others != null) {
+				this.othersMap.putAll(others);
+			}
+			return this;
+		}
+
+		public BIR build() {
+			BIR bir = new BIR();
+			bir.setBdb(bdb);
+			bir.setVersion(version);
+			bir.setCbeffVersion(cbeffVersion);
+			bir.setBirInfo(birInfo);
+			bir.setBdbInfo(bdbInfo);
+			bir.setSbInfo(sbInfo);
+			bir.setSb(sb);
+			bir.setBirs(birs);
+
+			// Convert Map to List<OthersList>
+			if (!othersMap.isEmpty()) {
+				OthersList othersList = new OthersList();
+				List<Entry> entries = new ArrayList<>();
+				for (Map.Entry<String, String> entry : othersMap.entrySet()) {
+					Entry e = new Entry(entry.getKey(), entry.getValue());
+					entries.add(e);
+		}
+				othersList.setEntries(entries);
+				bir.setOthers(new ArrayList<>(java.util.Collections.singletonList(othersList)));
+			}
+
+			return bir;
+		}
+	}
 }

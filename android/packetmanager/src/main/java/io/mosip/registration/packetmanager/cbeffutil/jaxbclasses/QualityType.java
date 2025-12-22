@@ -1,80 +1,63 @@
 package io.mosip.registration.packetmanager.cbeffutil.jaxbclasses;
 
-
 import org.simpleframework.xml.Element;
+import org.simpleframework.xml.Namespace;
+import org.simpleframework.xml.Order;
 import org.simpleframework.xml.Root;
 
-import lombok.Data;
-
-@Root
-@Data
+@Root(name = "Quality")
+@Namespace(reference = "http://standards.iso.org/iso-iec/19785/-3/ed-2/")
+@Order(elements = {
+        "Algorithm",
+        "Score",
+        "QualityCalculationFailed"
+})
 public class QualityType {
 
-	@Element(name = "Algorithm")
-	protected RegistryIDType algorithm;
-	@Element(name = "Score")
-	protected Long score;
-	@Element(name = "QualityCalculationFailed", required = false)
-	protected String qualityCalculationFailed;
+	@Element(name = "Algorithm", required = false)
+	private RegistryIDType algorithm;
 
-	/**
-	 * Gets the value of the algorithm property.
-	 * 
-	 * @return possible object is {@link RegistryIDType }
-	 * 
-	 */
+	@Element(name = "Score", required = false)
+	private Long score;
+
+	@Element(name = "QualityCalculationFailed", required = false)
+	private String qualityCalculationFailed;
+
+	/** Required by JAXB */
+	public QualityType() {}
+
+	/** Optional convenience constructor */
+	public QualityType(RegistryIDType algorithm, Long score, String qualityCalculationFailed) {
+		this.algorithm = algorithm;
+		this.score = score;
+		this.qualityCalculationFailed = qualityCalculationFailed;
+	}
+
+	// ---------------------------
+	// Getters & Setters
+	// ---------------------------
+
 	public RegistryIDType getAlgorithm() {
 		return algorithm;
 	}
 
-	/**
-	 * Sets the value of the algorithm property.
-	 * 
-	 * @param value allowed object is {@link RegistryIDType }
-	 * 
-	 */
-	public void setAlgorithm(RegistryIDType value) {
-		this.algorithm = value;
+	public void setAlgorithm(RegistryIDType algorithm) {
+		this.algorithm = algorithm;
 	}
 
-	/**
-	 * Gets the value of the score property.
-	 * 
-	 * @return possible object is {@link Long }
-	 * 
-	 */
 	public Long getScore() {
 		return score;
 	}
 
-	/**
-	 * Sets the value of the score property.
-	 * 
-	 * @param value allowed object is {@link Long }
-	 * 
-	 */
-	public void setScore(Long value) {
-		this.score = value;
+	public void setScore(Long score) {
+		this.score = score;
 	}
 
-	/**
-	 * Gets the value of the qualityCalculationFailed property.
-	 * 
-	 * @return possible object is {@link String }
-	 * 
-	 */
 	public String getQualityCalculationFailed() {
 		return qualityCalculationFailed;
 	}
 
-	/**
-	 * Sets the value of the qualityCalculationFailed property.
-	 * 
-	 * @param value allowed object is {@link String }
-	 * 
-	 */
-	public void setQualityCalculationFailed(String value) {
-		this.qualityCalculationFailed = value;
+	public void setQualityCalculationFailed(String qualityCalculationFailed) {
+		this.qualityCalculationFailed = qualityCalculationFailed;
 	}
-
 }

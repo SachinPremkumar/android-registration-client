@@ -43,6 +43,17 @@ allprojects {
         mavenCentral()
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
     }
+    configurations.all {
+        exclude group: "javax.activation"
+        exclude group: "jakarta.activation"
+        exclude group: "com.sun.activation"
+
+        exclude group: "jakarta.xml.bind"
+        exclude group: "org.eclipse.persistence"   // prevents MOXy (AWT crash)
+        
+        // Exclude xml-apis to avoid duplicate class conflicts with stax-api
+        exclude group: "xml-apis"
+    }
 }
 
 ext {
@@ -58,7 +69,7 @@ ext {
     clientmanagerLibVersionCode = 1
     clientmanagerLibVersionName = "\"1.0.0\""
 
-    serverBaseURL = "\"https://api-internal.qa-base.mosip.net\""
+    serverBaseURL = "\"https://api-internal.collab.mosip.net\""
     serverHealthCheckPath = "\"/v1/syncdata/actuator/health\""
     serverActuatorInfoPath = "\"/v1/syncdata/actuator/info\""
     debugPassword = "\"APTyKejHxACQyKBSRciR\""

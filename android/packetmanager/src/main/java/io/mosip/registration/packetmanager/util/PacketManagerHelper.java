@@ -12,12 +12,15 @@ import static io.mosip.registration.packetmanager.util.PacketManagerConstant.SIG
 import static io.mosip.registration.packetmanager.util.PacketManagerConstant.SOURCE;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +29,16 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import io.mosip.registration.packetmanager.cbeffutil.jaxbclasses.*;
+import io.mosip.registration.packetmanager.cbeffutil.jaxbclasses.Entry;
+import io.mosip.registration.packetmanager.cbeffutil.jaxbclasses.OthersList;
+import io.mosip.registration.packetmanager.cbeffutil.common.CbeffValidator;
 import io.mosip.registration.packetmanager.dto.PacketWriter.BiometricRecord;
 import io.mosip.registration.packetmanager.dto.PacketWriter.BiometricType;
 import io.mosip.registration.packetmanager.dto.PacketWriter.PacketInfo;
 import org.apache.commons.io.FileUtils;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-import org.simpleframework.xml.transform.RegistryMatcher;
+import org.apache.commons.io.IOUtils;
+
+import java.io.InputStream;
 
 /**
  * @Author Anshul Vanawat
@@ -44,41 +50,108 @@ public class PacketManagerHelper {
 
     private String configServerFileStorageURL;
     private String schemaName;
+    private Context context;
 
     @Inject
-    public PacketManagerHelper(Context context){
+    public PacketManagerHelper(Context context) {
+        this.context = context;
         configServerFileStorageURL = ConfigService.getProperty("mosip.kernel.xsdstorage-uri", context);
         schemaName = ConfigService.getProperty("mosip.kernel.xsdfile", context);
     }
 
-
     public byte[] getXMLData(BiometricRecord biometricRecord, boolean offlineMode) throws Exception {
-        //TODO validation of xml with XSD skipped
-        BIR bir = new BIR();
-        BIRInfo.BIRInfoBuilder infoBuilder = new BIRInfo.BIRInfoBuilder().withIntegrity(false);
-        BIRInfo birInfo = new BIRInfo(infoBuilder);
-        bir.setBirInfo(birInfo);
-        bir.setBirs(biometricRecord.getSegments());
+        Log.i(TAG, "Loading XSD schema from assets folder");
 
-        RegistryMatcher matcher = new RegistryMatcher();
-        matcher.bind(byte[].class, new ByteArrayTransformer());
-        matcher.bind(LocalDateTime.class, new LocalDateTimeTransformer());
-        matcher.bind(BiometricType.class, new BiometricTypeTransformer());
-        matcher.bind(ProcessedLevelType.class, new ProcessedLevelTypeTransformer());
-        matcher.bind(PurposeType.class, new PurposeTypeTransformer());
-        Serializer serializer = new Persister(matcher);
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream())
-        {
-            serializer.write(bir, baos);
-            return baos.toByteArray();
+        // Load XSD schema from assets folder only
+        InputStream xsd = null;
+        try {
+            if (context == null) {
+                throw new Exception("Context is null. Cannot load XSD schema from assets.");
+            }
+
+            // Load from assets folder
+            try {
+                xsd = context.getAssets().open(PacketManagerConstant.CBEFF_SCHEMA_FILE_PATH);
+                Log.i(TAG,
+                        "Successfully loaded XSD schema from assets: " + PacketManagerConstant.CBEFF_SCHEMA_FILE_PATH);
+            } catch (IOException e) {
+                throw new Exception("Unable to load XSD schema from assets folder. Please ensure " +
+                        PacketManagerConstant.CBEFF_SCHEMA_FILE_PATH + " exists in src/main/assets/", e);
+            }
+
+            // Create BIR from biometric record using setters
+            // The segments are already complete BIR objects built in RegistrationServiceImpl
+            // We just need to wrap them in a parent BIR with top-level metadata
+            BIR bir = new BIR();
+
+            // Use version/cbeffversion/birInfo from BiometricRecord if available, otherwise use defaults
+            VersionType version = biometricRecord.getVersion();
+            if (version == null) {
+                version = new VersionType();
+                version.setMajor(1);
+                version.setMinor(1);
+            }
+            VersionType cbeffversion = biometricRecord.getCbeffversion();
+            if (cbeffversion == null) {
+                cbeffversion = new VersionType();
+                cbeffversion.setMajor(1);
+                cbeffversion.setMinor(1);
+            }
+            BIRInfo birInfo = biometricRecord.getBirInfo();
+            if (birInfo == null) {
+                birInfo = new BIRInfo();
+                birInfo.setIntegrity(false);
+            }
+
+            bir.setVersion(version);
+            bir.setCbeffVersion(cbeffversion);
+            bir.setBirInfo(birInfo);
+
+            // Use segments directly - they're already complete BIR objects with all required fields
+            // (Version, CBEFFVersion, BIRInfo, BDBInfo, etc.) set in RegistrationServiceImpl.buildBIR()
+            List<BIR> segments = biometricRecord.getSegments();
+            if (segments != null && !segments.isEmpty()) {
+                bir.setBirs(segments);
+            }
+
+            // Set others from biometricRecord - convert Map to List<OthersList>
+            if (biometricRecord.getOthers() != null && !biometricRecord.getOthers().isEmpty()) {
+                OthersList othersList = new OthersList();
+                List<Entry> entries = new ArrayList<>();
+                for (Map.Entry<String, String> entry : biometricRecord.getOthers().entrySet()) {
+                    Entry e = new Entry(entry.getKey(), entry.getValue());
+                    entries.add(e);
+                }
+                othersList.setEntries(entries);
+                bir.setOthers(new ArrayList<>(java.util.Collections.singletonList(othersList)));
+            }
+
+            // Create XML bytes using CbeffValidator
+            byte[] xsdBytes = IOUtils.toByteArray(xsd);
+            return CbeffValidator.createXMLBytes(bir, xsdBytes);
+
+        } finally {
+            if (xsd != null) {
+                try {
+                    xsd.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing XSD stream", e);
+                }
+            }
         }
     }
 
-    public static byte[] generateHash(List<String> order, Map<String, byte[]> data) throws IOException, NoSuchAlgorithmException {
+    public static byte[] generateHash(List<String> order, Map<String, byte[]> data)
+            throws IOException, NoSuchAlgorithmException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         if (order != null && !order.isEmpty()) {
             for (String name : order) {
-                outputStream.write(data.get(name));
+                byte[] value = data.get(name);
+                if (value != null) {
+                    outputStream.write(value);
+                } else {
+                    Log.w(TAG, "Null value found for key: " + name + " in generateHash");
+                }
             }
             return HMACUtils2.digestAsPlainText(outputStream.toByteArray()).getBytes();
         }

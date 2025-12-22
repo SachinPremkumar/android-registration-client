@@ -5,11 +5,17 @@ import org.simpleframework.xml.transform.Transform;
 public class PurposeTypeTransformer implements Transform<PurposeType> {
     @Override
     public PurposeType read(String value) throws Exception {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
         return PurposeType.fromValue(value);
     }
 
     @Override
     public String write(PurposeType value) throws Exception {
+        if (value == null) {
+            return null;
+        }
         return value.value();
     }
 }

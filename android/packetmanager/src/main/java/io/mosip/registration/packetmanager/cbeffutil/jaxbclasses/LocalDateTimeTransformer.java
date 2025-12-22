@@ -11,15 +11,19 @@ import java.time.format.DateTimeFormatter;
 public class LocalDateTimeTransformer implements Transform<LocalDateTime> {
     @Override
     public LocalDateTime read(String value) throws Exception {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
         ZonedDateTime parse = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
                 .withZoneSameInstant(ZoneId.of("UTC"));
-        LocalDateTime locale = parse.toLocalDateTime();
-        return locale;
+        return parse.toLocalDateTime();
     }
 
     @Override
     public String write(LocalDateTime value) throws Exception {
-        if(value == null) { return ""; }
+        if (value == null) {
+            return "";
+        }
         return value.toInstant(ZoneOffset.UTC).toString();
     }
 }
