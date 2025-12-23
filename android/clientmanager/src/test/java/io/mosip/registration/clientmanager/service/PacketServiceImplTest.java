@@ -436,10 +436,10 @@ public class PacketServiceImplTest {
 
             callback.onResponse(mockCall, httpResponse);
 
-            Mockito.verify(mockRegistrationRepository).updateStatus(
+            Mockito.verify(mockRegistrationRepository).updateServerStatusWithTimestamp(
                     Mockito.eq("reg123"),
-                    Mockito.anyString(),
-                    Mockito.eq(PacketClientStatus.UPLOADED.name())
+                    Mockito.eq("UPLOADED"),
+                    Mockito.anyLong()
             );
         }
     }
