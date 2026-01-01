@@ -97,6 +97,9 @@ public class ApplicantBiometricsPageEnglish extends ApplicantBiometricsPage {
 
 	@AndroidFindBy(xpath = "//android.view.View[@content-desc=\"Exceptions\"]/following-sibling::android.view.View[@content-desc=\"1\"]")
 	private WebElement exceptionCount;
+	
+	@AndroidFindBy(accessibility = "Scan")
+	private WebElement scanButtonOfBiometrics;
 
 	public ApplicantBiometricsPageEnglish(AppiumDriver driver) {
 		super(driver);
@@ -110,6 +113,9 @@ public class ApplicantBiometricsPageEnglish extends ApplicantBiometricsPage {
 	}
 
 	public void clickOnScanButton() {
+		if (!isElementDisplayedOnScreen(scanButton)) {
+			swipeOrScroll();
+		}
 		clickOnElement(scanButton);
 	}
 

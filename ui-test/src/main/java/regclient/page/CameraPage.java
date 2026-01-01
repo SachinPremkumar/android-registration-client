@@ -26,16 +26,16 @@ public class CameraPage extends BasePage {
 	}
 
 	public void clickimage() {
-		waitTime(1);
-		clickAtCoordinates(1835, 600);
+		waitTime(2);
+		clickAtCoordinates(730, 696);
 	}
 
 	public void clickOkButton() {
 		if (isElementDisplayed(okButton))
 			clickOnElement(okButton);
 		else {
-			waitTime(1);
-			clickAtCoordinates(43, 78);
+			waitTime(2);
+			clickAtCoordinates(732, 671);
 		}
 	}
 

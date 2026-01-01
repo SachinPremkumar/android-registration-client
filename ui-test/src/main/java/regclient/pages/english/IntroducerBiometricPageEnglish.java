@@ -76,6 +76,9 @@ public class IntroducerBiometricPageEnglish extends IntroducerBiometricPage {
 	}
 
 	public void clickOnScanButton() {
+		if (!isElementDisplayedOnScreen(scanButton)) {
+			swipeOrScroll();
+		}
 		clickOnElement(scanButton);
 	}
 

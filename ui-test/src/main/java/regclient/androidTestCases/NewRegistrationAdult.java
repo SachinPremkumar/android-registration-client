@@ -152,6 +152,7 @@ public class NewRegistrationAdult extends AndroidBaseTest {
 		PendingApproval pendingApproval = null;
 		ManageApplicationsPage manageApplicationsPage = null;
 		ProfilePage profilePage = null;
+		BasePage basePage = null;
 
 		final String language = TestDataReader.readData("language");
 
