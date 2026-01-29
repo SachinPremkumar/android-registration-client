@@ -111,7 +111,7 @@ public class ApplicantBiometricsPageEnglish extends ApplicantBiometricsPage {
 		}
 		clickAndsendKeysToTextBox(commentsTextBox, comments);
 	}
-
+	
 	public void clickOnScanButton() {
 		if (!isElementDisplayedOnScreen(scanButton)) {
 			swipeOrScroll();

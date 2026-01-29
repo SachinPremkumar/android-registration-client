@@ -21,21 +21,39 @@ public class CameraPage extends BasePage {
 	@AndroidFindBy(id = "com.android.permissioncontroller:id/permission_allow_foreground_only_button")
 	private WebElement allowWhileUsingButton;
 
+	@AndroidFindBy(accessibility = "RETAKE")
+	private WebElement retakeButton;
+
 	public CameraPage(AppiumDriver driver) {
 		super(driver);
 	}
 
 	public void clickimage() {
-		waitTime(2);
-		clickAtCoordinates(730, 696);
+		for (int i = 0; i < 3; i++) {
+			clickAtCoordinates(730, 696);
+
+			if (isElementDisplayed(okButton, 2)) {
+				break;
+			}
+		}
 	}
 
 	public void clickOkButton() {
-		if (isElementDisplayed(okButton))
-			clickOnElement(okButton);
-		else {
-			waitTime(2);
-			clickAtCoordinates(732, 671);
+
+		boolean coordinateClicked = false;
+
+		for (int i = 0; i < 3; i++) {
+
+			if (!coordinateClicked) {
+				clickAtCoordinates(732, 671);
+				coordinateClicked = true;
+			} else if (isElementDisplayed(okButton)) {
+				clickOnElement(okButton);
+			}
+
+			if (isElementDisplayed(retakeButton, 2)) {
+				break;
+			}
 		}
 	}
 
@@ -51,6 +69,10 @@ public class CameraPage extends BasePage {
 			}
 		} catch (Exception ignored) {
 		}
+	}
+
+	public boolean isRetakeButtonDisplayed() {
+		return isElementDisplayed(retakeButton);
 	}
 
 }
