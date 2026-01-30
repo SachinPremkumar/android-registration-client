@@ -4,7 +4,7 @@
   <groupId>io.mosip.regclient</groupId>
   <artifactId>uitest-regclient</artifactId>
   <name>uitest-regclient</name>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
   <description>Parent project of MOSIP regclient mobile automation</description>
   <url>https://github.com/mosip/android-registration-client</url>
   <build>

@@ -21,6 +21,7 @@
       "appium:uiautomator2ServerLaunchTimeout": 200000,
 
       "appium:settings[waitForIdleTimeout]": 100, 
+      "appium:settings[enforceXPath1]": true,
       "appium:settings[ignoreUnimportantViews]": true
     }
   }

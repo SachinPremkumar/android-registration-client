@@ -133,11 +133,11 @@ public class PendingApprovalEnglish extends PendingApproval {
 	}
 
 	public void enterUserName(String username) {
-		clickAndsendKeysToTextBox2(userNameTextBox, username);
+		safeClickAndEnterText(userNameTextBox, username);
 	}
 
 	public void enterPassword(String password) {
-		clickAndsendKeysToTextBox2(passwordTextBox, password);
+		safeClickAndEnterText(passwordTextBox, password);
 	}
 
 	public void clickOnBackButton() {

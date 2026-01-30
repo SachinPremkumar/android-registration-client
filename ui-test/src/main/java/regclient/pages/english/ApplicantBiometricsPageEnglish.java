@@ -168,7 +168,10 @@ public class ApplicantBiometricsPageEnglish extends ApplicantBiometricsPage {
 
 	public void clickOnZoomButton() {
 		waitTime(1);
-		clickAtCoordinates(1035, 1077);
+		// Using explicit coordinates as the element locator is flaky and causes W3C
+		// action issues.
+		// Coordinates provided: X=701, Y=679
+		clickAtCoordinates(701, 679);
 	}
 
 	public void clickOnIrisScanTitle() {
