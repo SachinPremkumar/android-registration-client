@@ -595,6 +595,7 @@ public class BiometricCorrection extends AndroidBaseTest {
 
 		// Return to mocksbi page
 		mockSBIPage.switchToMockSBI();
+		mockSBIPage.clickOnMockSbiSettingsButton();
 		mockSBIPage.setAllModalityHighScore();
 		mockSBIPage.switchBackToArcApp();
 		// biocorrection flow
