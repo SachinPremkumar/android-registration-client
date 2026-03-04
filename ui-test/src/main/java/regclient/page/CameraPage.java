@@ -24,6 +24,9 @@ public class CameraPage extends BasePage {
 	@AndroidFindBy(accessibility = "RETAKE")
 	private WebElement retakeButton;
 
+	@AndroidFindBy(id = "com.hihonor.camera:id/done_button")
+	private WebElement okBtn;
+
 	public CameraPage(AppiumDriver driver) {
 		super(driver);
 	}
