@@ -20,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowEnvironment;
+import org.mockito.MockedStatic;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -33,6 +34,7 @@ import java.util.zip.ZipOutputStream;
 
 import io.mosip.registration.packetmanager.spi.IPacketCryptoService;
 import io.mosip.registration.packetmanager.util.ConfigService;
+import io.mosip.registration.packetmanager.util.StorageUtils;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = Build.VERSION_CODES.P)
@@ -655,29 +657,28 @@ public class PosixAdapterServiceImplTest {
     }
 
     @Test
-    // Tests if initPosixAdapterService sets BASE_LOCATION correctly when storage is mounted
+    // Tests if initPosixAdapterService sets BASE_LOCATION correctly when storage is unmounted
     public void testInitPosixAdapterService_withUnmountedStorage_shouldNotSetBaseLocation() throws Exception {
-        // Simulate unmounted storage
-        Context context = mock(Context.class);
-        ObjectMapper objectMapper = new ObjectMapper();
-        IPacketCryptoService cryptoService = mock(IPacketCryptoService.class);
+        // Arrange
+        File internalDir = temporaryFolder.newFolder("internal_fallback");
+        
+        try (MockedStatic<StorageUtils> storageUtilsMock = mockStatic(StorageUtils.class)) {
+            storageUtilsMock.when(() -> StorageUtils.getPacketStorageDir(any()))
+                .thenReturn(internalDir);
 
-        // Patch Environment.getExternalStorageState() to return not mounted
-        String originalState = System.getProperty("EXTERNAL_STORAGE_STATE");
-        System.setProperty("EXTERNAL_STORAGE_STATE", "unmounted");
+            ObjectMapper objectMapper = new ObjectMapper();
+            IPacketCryptoService cryptoService = mock(IPacketCryptoService.class);
+            Context context = mock(Context.class);
 
-        PosixAdapterServiceImpl localService = new PosixAdapterServiceImpl(context, cryptoService, objectMapper);
+            // Act
+            PosixAdapterServiceImpl localService = new PosixAdapterServiceImpl(context, cryptoService, objectMapper);
 
-        // Use reflection to check BASE_LOCATION is null or not set
-        Field baseLocationField = PosixAdapterServiceImpl.class.getDeclaredField("BASE_LOCATION");
-        baseLocationField.setAccessible(true);
-        String baseLocation = (String) baseLocationField.get(localService);
-        // Should be null or not set
-        assertNull(baseLocation);
-
-        // Restore property
-        if (originalState != null) {
-            System.setProperty("EXTERNAL_STORAGE_STATE", originalState);
+            // Assert
+            Field baseLocationField = PosixAdapterServiceImpl.class.getDeclaredField("BASE_LOCATION");
+            baseLocationField.setAccessible(true);
+            String baseLocation = (String) baseLocationField.get(localService);
+            
+            assertEquals(internalDir.getAbsolutePath(), baseLocation);
         }
     }
 
@@ -1553,29 +1554,25 @@ public class PosixAdapterServiceImplTest {
     // Tests if initPosixAdapterService sets BASE_LOCATION correctly when storage is mounted
     public void testInitPosixAdapterService_withMountedStorage_shouldSetBaseLocation() throws Exception {
         // Arrange
-        File fakeExternalStorage = temporaryFolder.newFolder("external");
-        ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED);
-        ShadowEnvironment.setExternalStorageDirectory(fakeExternalStorage.toPath());
+        File expectedDir = temporaryFolder.newFolder("mosip-test-mounted");
+        
+        try (MockedStatic<StorageUtils> storageUtilsMock = mockStatic(StorageUtils.class)) {
+            storageUtilsMock.when(() -> StorageUtils.getPacketStorageDir(any()))
+                .thenReturn(expectedDir);
 
-        // Mock ConfigService to return a folder name
-        mockStatic(ConfigService.class);
-        when(ConfigService.getProperty(eq("objectstore.base.location"), any())).thenReturn("mosip-test");
+            ObjectMapper objectMapper = new ObjectMapper();
+            IPacketCryptoService cryptoService = mock(IPacketCryptoService.class);
+            Context context = mock(Context.class);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        IPacketCryptoService cryptoService = mock(IPacketCryptoService.class);
-        Context context = mock(Context.class);
+            // Act
+            PosixAdapterServiceImpl localService = new PosixAdapterServiceImpl(context, cryptoService, objectMapper);
 
-        // Act
-        PosixAdapterServiceImpl localService = new PosixAdapterServiceImpl(context, cryptoService, objectMapper);
-
-        // Assert
-        File expectedDir = new File(fakeExternalStorage, "mosip-test");
-        assertTrue(expectedDir.exists());
-
-        Field baseLocationField = PosixAdapterServiceImpl.class.getDeclaredField("BASE_LOCATION");
-        baseLocationField.setAccessible(true);
-        String baseLocation = (String) baseLocationField.get(localService);
-        assertEquals(expectedDir.getAbsolutePath(), baseLocation);
+            // Assert
+            Field baseLocationField = PosixAdapterServiceImpl.class.getDeclaredField("BASE_LOCATION");
+            baseLocationField.setAccessible(true);
+            String baseLocation = (String) baseLocationField.get(localService);
+            assertEquals(expectedDir.getAbsolutePath(), baseLocation);
+        }
     }
 
     @Test
@@ -1624,10 +1621,15 @@ public class PosixAdapterServiceImplTest {
         // Set external storage to mounted
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED);
 
+        // Ensure baseDir is in a "mounted" location for Robolectric
+        File mountedBaseDir = new File(Environment.getExternalStorageDirectory(), "test-packets");
+        mountedBaseDir.mkdirs();
+        ShadowEnvironment.setExternalStorageState(mountedBaseDir, Environment.MEDIA_MOUNTED);
+
         // Point to test base directory
         Field baseLocationField = PosixAdapterServiceImpl.class.getDeclaredField("BASE_LOCATION");
         baseLocationField.setAccessible(true);
-        baseLocationField.set(service, baseDir.getAbsolutePath());
+        baseLocationField.set(service, mountedBaseDir.getAbsolutePath());
 
         InputStream inputStream = new ByteArrayInputStream("new zip content".getBytes());
 
@@ -1637,8 +1639,8 @@ public class PosixAdapterServiceImplTest {
 
         method.invoke(service, "accNew", "contNew", "src", "proc", "fileNew.txt", inputStream);
 
-        File containerZip = new File(new File(baseDir, "accNew"), "contNew.zip");
-        assertTrue("ZIP file should be created", containerZip.exists());
+        File containerZip = new File(new File(mountedBaseDir, "accNew"), "contNew.zip");
+        assertTrue("ZIP file should be created at " + containerZip.getAbsolutePath(), containerZip.exists());
     }
 
     @Test
@@ -1648,13 +1650,18 @@ public class PosixAdapterServiceImplTest {
         // Simulate mounted external storage
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED);
 
+        // Ensure baseDir is in a "mounted" location for Robolectric
+        File mountedBaseDir = new File(Environment.getExternalStorageDirectory(), "test-packets-append");
+        mountedBaseDir.mkdirs();
+        ShadowEnvironment.setExternalStorageState(mountedBaseDir, Environment.MEDIA_MOUNTED);
+
         // Set base location manually
         Field baseLocationField = PosixAdapterServiceImpl.class.getDeclaredField("BASE_LOCATION");
         baseLocationField.setAccessible(true);
-        baseLocationField.set(service, baseDir.getAbsolutePath());
+        baseLocationField.set(service, mountedBaseDir.getAbsolutePath());
 
         // Create initial ZIP file with one entry
-        File accountDir = new File(baseDir, "accExist");
+        File accountDir = new File(mountedBaseDir, "accExist");
         accountDir.mkdirs();
         File zipFile = new File(accountDir, "contExist.zip");
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {

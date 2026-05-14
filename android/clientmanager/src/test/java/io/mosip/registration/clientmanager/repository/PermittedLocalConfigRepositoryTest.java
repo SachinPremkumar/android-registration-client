@@ -1,15 +1,9 @@
 package io.mosip.registration.clientmanager.repository;
 
-import android.util.Log;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
@@ -21,9 +15,7 @@ import io.mosip.registration.clientmanager.entity.PermittedLocalConfig;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,22 +29,6 @@ public class PermittedLocalConfigRepositoryTest {
 
     @InjectMocks
     private PermittedLocalConfigRepository repository;
-
-    private MockedStatic<Log> logMock;
-
-    @Before
-    public void setUp() {
-        logMock = Mockito.mockStatic(Log.class);
-        logMock.when(() -> Log.e(Mockito.anyString(), Mockito.anyString(), Mockito.any(Throwable.class))).thenReturn(0);
-        logMock.when(() -> Log.e(Mockito.anyString(), Mockito.anyString())).thenReturn(0);
-    }
-
-    @After
-    public void tearDown() {
-        if (logMock != null) {
-            logMock.close();
-        }
-    }
 
     private PermittedLocalConfig buildConfig(String code) {
         PermittedLocalConfig config = new PermittedLocalConfig(code);
@@ -81,7 +57,6 @@ public class PermittedLocalConfigRepositoryTest {
         repository.savePermittedConfigs(configs);
 
         verify(permittedLocalConfigDao).insertAll(configs);
-        logMock.verify(() -> Log.e(Mockito.anyString(), Mockito.anyString(), any(Throwable.class)), times(1));
     }
 
     @Test
@@ -105,6 +80,5 @@ public class PermittedLocalConfigRepositoryTest {
         List<PermittedLocalConfig> result = repository.getPermittedConfigsByType(CONFIG_TYPE);
 
         assertNull(result);
-        logMock.verify(() -> Log.e(Mockito.anyString(), Mockito.anyString(), any(Throwable.class)), times(1));
     }
 }

@@ -9,7 +9,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_config/flutter_config.dart';
 import 'package:registration_client/model/actuator_info.dart';
 import 'package:registration_client/pigeon/common_details_pigeon.dart';
 import 'package:registration_client/platform_spi/network_service.dart';
@@ -19,9 +18,10 @@ class NetworkServiceImpl implements NetworkService {
   @override
   Future<String> checkInternetConnection() async {
     try {
+      final baseUrl = await CommonDetailsApi().getBaseUrl();
+      final healthPath = await CommonDetailsApi().getHealthCheckPath();
       final response = await http
-          .get(Uri.parse(FlutterConfig.get('BASE_URL') +
-              FlutterConfig.get('HEALTH_CHECK_PATH')))
+          .get(Uri.parse(baseUrl + healthPath))
           .timeout(const Duration(seconds: 2));
       return response.statusCode.toString();
     } catch (e) {
@@ -34,9 +34,10 @@ class NetworkServiceImpl implements NetworkService {
   Future<String> getVersionNoApp() async {
     String versionInfo = '';
     try {
+      final baseUrl = await CommonDetailsApi().getBaseUrl();
+      final actuatorPath = await CommonDetailsApi().getActuatorInfoPath();
       final response = await http
-          .get(Uri.parse(FlutterConfig.get('BASE_URL') +
-              FlutterConfig.get('ACTUATOR_INFO_PATH')))
+          .get(Uri.parse(baseUrl + actuatorPath))
           .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         ActuatorInfo actuatorInfo =

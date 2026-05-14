@@ -1,15 +1,9 @@
 package io.mosip.registration.clientmanager.repository;
 
-import android.util.Log;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
@@ -40,22 +34,6 @@ public class LocalPreferencesRepositoryTest {
 
     @InjectMocks
     private LocalPreferencesRepository repository;
-
-    private MockedStatic<Log> logMock;
-
-    @Before
-    public void setUp() {
-        logMock = Mockito.mockStatic(Log.class);
-        logMock.when(() -> Log.e(Mockito.anyString(), Mockito.anyString(), Mockito.any(Throwable.class))).thenReturn(0);
-        logMock.when(() -> Log.e(Mockito.anyString(), Mockito.anyString())).thenReturn(0);
-    }
-
-    @After
-    public void tearDown() {
-        if (logMock != null) {
-            logMock.close();
-        }
-    }
 
     private LocalPreferences buildPreference(String id, String name, String value) {
         LocalPreferences pref = new LocalPreferences(id);

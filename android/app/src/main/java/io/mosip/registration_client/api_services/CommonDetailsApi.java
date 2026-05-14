@@ -11,6 +11,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import io.mosip.registration_client.BuildConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,5 +155,20 @@ public class CommonDetailsApi implements CommonDetailsPigeon.CommonDetailsApi {
             Log.e(getClass().getSimpleName(), "Error fetching Updating Biometrics URL", e);
         }
         result.success(response);
+    }
+
+    @Override
+    public void getBaseUrl(@NonNull CommonDetailsPigeon.Result<String> result) {
+        result.success(BuildConfig.BASE_URL);
+    }
+
+    @Override
+    public void getHealthCheckPath(@NonNull CommonDetailsPigeon.Result<String> result) {
+        result.success(BuildConfig.HEALTH_CHECK_PATH);
+    }
+
+    @Override
+    public void getActuatorInfoPath(@NonNull CommonDetailsPigeon.Result<String> result) {
+        result.success(BuildConfig.ACTUATOR_INFO_PATH);
     }
 }

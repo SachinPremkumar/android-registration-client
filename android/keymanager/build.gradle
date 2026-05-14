@@ -5,12 +5,14 @@ plugins {
 apply from: '../jacoco.gradle'
 
 android {
+
+    namespace "io.mosip.registration.keymanager"
+
     lintOptions {
         abortOnError false
         ignoreWarnings true
     }
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
 
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
@@ -30,8 +32,23 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                jvmArgs(
+                    '-XX:+EnableDynamicAgentLoading',
+                    '-Dnet.bytebuddy.experimental=true',
+                    '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+                    '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+                    '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED'
+                )
+            }
+        }
     }
 
     libraryVariants.every { variant ->
@@ -52,8 +69,8 @@ dependencies {
     annotationProcessor 'com.google.dagger:dagger-compiler:2.41'
     annotationProcessor 'com.google.dagger:dagger-android-processor:2.41'
 
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
 
     implementation 'javax.validation:validation-api:2.0.1.Final'
 
@@ -62,8 +79,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
 
-    testImplementation 'org.mockito:mockito-inline:4.8.0'
-    testImplementation 'org.mockito:mockito-core:4.11.0'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
 
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     implementation 'org.apache.commons:commons-lang3:3.12.0'
@@ -74,8 +90,8 @@ dependencies {
     // https://mvnrepository.com/artifact/commons-io/commons-io
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.60'
-    implementation 'org.bouncycastle:bcpkix-jdk15on:1.47'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
 
     implementation 'com.madgag.spongycastle:core:1.58.0.0'
 

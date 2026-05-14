@@ -53,7 +53,8 @@ public class PacketServiceImplTest {
         MockitoAnnotations.openMocks(this);
         packetService = Mockito.spy(new PacketServiceImpl(
                 mockContext, mockRegistrationRepository, mockPacketCryptoService,
-                mockSyncRestService, mockMasterDataService, mockGlobalParamRepository
+                mockSyncRestService, mockMasterDataService, mockGlobalParamRepository,
+                mock(AuditManagerService.class)
         ));
     }
 
@@ -436,10 +437,10 @@ public class PacketServiceImplTest {
 
             callback.onResponse(mockCall, httpResponse);
 
-            Mockito.verify(mockRegistrationRepository).updateStatus(
+            Mockito.verify(mockRegistrationRepository).updateServerStatusWithTimestamp(
                     Mockito.eq("reg123"),
-                    Mockito.anyString(),
-                    Mockito.eq(PacketClientStatus.UPLOADED.name())
+                    Mockito.eq("UPLOADED"),
+                    Mockito.anyLong()
             );
         }
     }

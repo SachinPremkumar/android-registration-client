@@ -180,7 +180,7 @@ public class AppModuleTest {
                 registrationCenterRepository, documentTypeRepository, applicantValidDocRepository, templateRepository,
                 dynamicFieldRepository, locationRepository, globalParamRepository, identitySchemaRepository,
                 blocklistedWordRepository, syncJobDefRepository, userDetailRepository, certificateManagerService,
-                languageRepository, jobManagerService, fileSignatureDao, jobTransactionService, permittedLocalConfigRepository, localConfigDAO
+                languageRepository, jobManagerService, fileSignatureDao, jobTransactionService, permittedLocalConfigRepository, localConfigDAO, auditManagerService
         );
         assertNotNull(service);
         assertTrue(service instanceof MasterDataServiceImpl);
@@ -202,7 +202,7 @@ public class AppModuleTest {
     public void testProvideRegistrationService() {
         RegistrationService service = appModule.provideRegistrationService(
                 packetWriterService, registrationRepository, mock(MasterDataService.class), identitySchemaRepository,
-                clientCryptoManagerService, keyStoreRepository, globalParamRepository, auditManagerService,registrationCenterRepository,locationValidationService, preRegistrationDataSyncServiceProvider,biometricService
+                clientCryptoManagerService, keyStoreRepository, globalParamRepository, auditManagerService,registrationCenterRepository,locationValidationService, preRegistrationDataSyncServiceProvider,biometricService, mock(PacketService.class), mock(PreCheckValidatorService.class)
         );
         assertNotNull(service);
         assertTrue(service instanceof RegistrationServiceImpl);
@@ -217,7 +217,7 @@ public class AppModuleTest {
     @Test
     public void testProvidePacketService() {
         PacketService service = appModule.providePacketService(
-                registrationRepository, iPacketCryptoService, syncRestService, mock(MasterDataService.class), globalParamRepository
+                registrationRepository, iPacketCryptoService, syncRestService, mock(MasterDataService.class), globalParamRepository, auditManagerService
         );
         assertNotNull(service);
         assertTrue(service instanceof PacketServiceImpl);
@@ -245,7 +245,7 @@ public class AppModuleTest {
 
     @Test
     public void testProvideJobManagerService() {
-        JobManagerService service = appModule.provideJobManagerService(syncJobDefRepository, mock(JobTransactionService.class), dateUtil);
+        JobManagerService service = appModule.provideJobManagerService(syncJobDefRepository, mock(JobTransactionService.class), dateUtil, mock(LocalConfigService.class));
         assertNotNull(service);
         assertTrue(service instanceof JobManagerServiceImpl);
     }

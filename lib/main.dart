@@ -6,7 +6,6 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_config/flutter_config.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:registration_client/app_router.dart';
 import 'package:registration_client/provider/approve_packets_provider.dart';
@@ -36,7 +35,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _setupSyncRestartChannel();
   final GlobalProvider appLanguage = GlobalProvider();
-  await FlutterConfig.loadEnvVariables();
   await appLanguage.fetchLocale();
   runApp(
     const RestartWidget(child: RegistrationClientApp()),

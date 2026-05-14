@@ -247,7 +247,6 @@ public class AuditManagerServiceTest {
     public void test_audit_delegates_to_add_audit_with_null_error_msg() {
         when(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockSharedPreferences);
         when(mockContext.getString(R.string.app_name)).thenReturn("TestApp");
-        when(mockSharedPreferences.getString(SessionManager.USER_NAME, null)).thenReturn("testUser");
 
         auditManagerService.audit(AuditEvent.LOGIN_WITH_PASSWORD, "MOD001", "LoginModule", "REF123", "USER_ID");
 
@@ -258,9 +257,8 @@ public class AuditManagerServiceTest {
     public void test_audit_with_null_audit_event_enum() {
         when(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockSharedPreferences);
         when(mockContext.getString(R.string.app_name)).thenReturn("TestApp");
-        when(mockSharedPreferences.getString(SessionManager.USER_NAME, null)).thenReturn("testUser");
 
-        assertThrows(NullPointerException.class, () -> {
+        assertDoesNotThrow(() -> {
             auditManagerService.audit(null, "MOD001", "LoginModule", "REF123", "USER_ID");
         });
     }
