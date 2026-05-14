@@ -49,6 +49,9 @@ configurations.configureEach {
         force 'org.jacoco:org.jacoco.report:0.8.12'
         force 'org.jacoco:org.jacoco.ant:0.8.12'
     }
+    // logback calls Class.getModule() (Java 9 JPMS API) which does not exist on Android ART.
+    // Exclude globally — logback is a server-side SLF4J backend and must never reach the device.
+    exclude group: 'ch.qos.logback'
 }
 
 // Ensure bioSdk DEX conversion runs before asset merge
@@ -143,6 +146,12 @@ android {
     }
     packagingOptions {
         resources.merges.add("git.properties")
+        resources.merges.add("notice.txt")
+        resources.merges.add("NOTICE.txt")
+        resources.merges.add("license.txt")
+        resources.merges.add("LICENSE.txt")
+        resources.pickFirsts.add("mozilla/public-suffix-list.txt")
+        resources.pickFirsts.add("checkstyle.xml")
         resources.excludes.add("META-INF/*")
         resources.excludes.add("META-INF/**")
     }
@@ -257,11 +266,23 @@ dependencies {
     implementation("com.github.jai-imageio:jai-imageio-core:1.3.0")
 
     // BioMetrics
-    implementation('io.mosip.biometric.util:biometrics-util:1.2.0.2') {
+    implementation('io.mosip.biometric.util:biometrics-util:1.3.0') {
         exclude group: 'org.springframework.boot'
+        exclude group: 'org.springframework'
+        exclude group: 'org.springframework.data'
         exclude group: 'com.fasterxml.jackson.core'
         exclude group: 'org.projectlombok'
         exclude group: 'org.openpnp'
+        exclude group: 'org.junit'
+        exclude group: 'jakarta.xml.bind'
+        exclude group: 'jakarta.annotation'
+        exclude group: 'jakarta.activation'
+        exclude group: 'javax.activation'
+        exclude group: 'org.apache.tomcat'
+        exclude group: 'aopalliance'
+        exclude group: 'commons-logging'
+        exclude group: 'com.google.code.findbugs'
+        exclude group: 'org.aspectj', module: 'aspectjweaver'
     }
 
     // Logging
