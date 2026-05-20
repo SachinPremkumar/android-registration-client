@@ -39,7 +39,7 @@ public class DriverManager {
 				.withAppiumJS(new File(propertiesReader.getAppiumServerExecutable()))
 				.usingDriverExecutable(new File(propertiesReader.getNodePath())).withIPAddress(ipAddress)
 				.usingAnyFreePort().withArgument(GeneralServerFlag.LOCAL_TIMEZONE)
-				.withArgument(() -> "--allow-insecure", "chromedriver_autodownload");
+				.withArgument(() -> "--allow-insecure", "uiautomator2:chromedriver_autodownload");
 		service = AppiumDriverLocalService.buildService(builder);
 		service.start();
 	}

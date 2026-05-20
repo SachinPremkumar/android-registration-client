@@ -136,9 +136,11 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 			if (FetchUiSpec.getRequiredTypeUsingId(id)) {
 				if (FetchUiSpec.getControlTypeUsingId(id).equals("textbox")) {
 					waitTime(1);
+					String fieldLabel = FetchUiSpec.getValueUsingId(id);
+					System.out.println("[DEBUG] Searching for field id='" + id + "' label='" + fieldLabel + "'");
 					boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
-							"new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\")")));
-					assertTrue(isdisplayed, "Verify if " + id + " header is displayed");
+							"new UiSelector().descriptionContains(\"" + fieldLabel + "\")")));
+					assertTrue(isdisplayed, "Verify if " + id + " header is displayed (label='" + fieldLabel + "')");
 					waitTime(1);
 					clickAndsendKeysToTextBox3(
 							findElementWithRetry(By.xpath("//android.view.View[contains(@content-desc, \""
@@ -181,13 +183,9 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 						waitTime(1);
 						clickOnElement(findElement(By.className("android.view.View")));
 					}
-				} else if (FetchUiSpec.getControlTypeUsingId(id).equals("dropdown")
-						&& FetchUiSpec.getFormatUsingId(id).equals("")) {
-					if (!isElementDisplayed(maleButton)) {
-						swipeOrScroll();
-						clickOnElement(maleButton);
-					} else
-						clickOnElement(maleButton);
+				} else if (FetchUiSpec.getControlTypeUsingId(id).equals("button")) {
+					System.out.println("[DEBUG] Button field id='" + id + "' label='" + FetchUiSpec.getValueUsingId(id) + "'");
+					selectRadioOption(id);
 
 				} else if (FetchUiSpec.getControlTypeUsingId(id).equals("ageDate")) {
 					waitTime(1);
@@ -225,42 +223,16 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 					}
 				}
 			} else if (id.equals("residenceStatus")) {
-				if (FetchUiSpec.getControlTypeUsingId(id).equals("dropdown")
-						&& FetchUiSpec.getFormatUsingId(id).equals("none")) {
-					waitTime(1);
-					boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
-							"new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\")")));
-					assertTrue(isdisplayed, "Verify if " + id + " header is displayed");
-					WebElement dropdownElement = findElement(
-							By.xpath("//android.view.View[contains(@content-desc, \"" + FetchUiSpec.getValueUsingId(id)
-									+ "\")]/parent::android.view.View/parent::android.widget.Button"));
-					clickOnElement(dropdownElement);
-					waitTime(1);
-					if (!isElementDisplayed(dropdownElement)) {
-//						clickOnElement(findElement(By.className("android.view.View")));
-						clickOnElement(nonForeignerOption);
-					} else if (isElementDisplayed(dropdownElement)) {
-						swipeOrScroll();
-						clickOnElement(dropdownElement);
-						waitTime(1);
-						clickOnElement(findElement(By.className("android.view.View")));
-					}
-					waitTime(1);
-					if (isElementDisplayed(By.xpath("//android.view.View[contains(@content-desc, \""
-							+ FetchUiSpec.getValueUsingId(id)
-							+ "\")]/parent::android.view.View/parent::android.widget.Button[contains(@content-desc, \"Select Option\")]"))) {
-						clickOnElement(dropdownElement);
-						waitTime(1);
-						clickOnElement(findElement(By.className("android.view.View")));
-					}
-				}
+				System.out.println("[DEBUG] Radio field id='residenceStatus' label='" + FetchUiSpec.getValueUsingId(id) + "'");
+				selectRadioOption(id);
 			}
 			if (id.equals("introducerName") && FetchUiSpec.getFlowType().equals("newProcess")) {
 				if (age.equals("minor") || age.equals("infant") || age.equals("currentCalenderDate")) {
 					if (FetchUiSpec.getControlTypeUsingId(id).equals("textbox")) {
 						waitTime(1);
 						boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
-								"new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\")")));
+								"new UiScrollable(new UiSelector().scrollable(true).instance(0))"
+								+ ".scrollIntoView(new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\"))")));
 						assertTrue(isdisplayed, "Verify if " + id + " header is displayed");
 						clickAndsendKeysToTextBox(
 								findElementWithRetry(By.xpath("//android.view.View[contains(@content-desc, \""
@@ -278,7 +250,8 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 					if (FetchUiSpec.getControlTypeUsingId(id).equals("textbox")) {
 						waitTime(1);
 						boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
-								"new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\")")));
+								"new UiScrollable(new UiSelector().scrollable(true).instance(0))"
+								+ ".scrollIntoView(new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\"))")));
 						assertTrue(isdisplayed, "Verify if " + id + " header is displayed");
 						clickAndsendKeysToTextBox(
 								findElementWithRetry(By.xpath("//android.view.View[contains(@content-desc, \""
@@ -311,6 +284,9 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 					if (FetchUiSpec.getTransliterateTypeUsingId(id))
 						assertTrue(checkSecondLanguageTextBoxNotNull(id),
 								"Verify if " + id + " is enter in second language text box");
+				} else if (FetchUiSpec.getControlTypeUsingId(id).equals("button")) {
+					System.out.println("[DEBUG] Button field id='" + id + "' label='" + FetchUiSpec.getValueUsingId(id) + "'");
+					selectRadioOption(id);
 				} else if (FetchUiSpec.getControlTypeUsingId(id).equals("ageDate")) {
 					waitTime(3);
 					boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
@@ -383,7 +359,29 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 					}
 				}
 			}
+			if (id.equals("residenceStatus")) {
+				System.out.println("[DEBUG] Radio field id='residenceStatus' label='" + FetchUiSpec.getValueUsingId(id) + "'");
+				selectRadioOption(id);
+			}
 		}
+	}
+
+	private void selectRadioOption(String id) {
+		List<String> options = FetchUiSpec.getDropdownOptions(id);
+		for (int pass = 0; pass < 2; pass++) {
+			for (String option : options) {
+				By by = MobileBy.AndroidUIAutomator("new UiSelector().descriptionContains(\"" + option + "\")");
+				try {
+					if (isElementDisplayed(by)) {
+						click(by);
+						System.out.println("[DEBUG] Clicked radio option: '" + option + "' for id: " + id);
+						return;
+					}
+				} catch (Exception ignored) {}
+			}
+			swipeOrScroll();
+		}
+		System.out.println("[WARN] No radio option found for id: " + id + " options tried: " + options);
 	}
 
 	public boolean checkSecondLanguageTextBoxNotNull(String id) {
@@ -416,7 +414,8 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 					if (FetchUiSpec.getControlTypeUsingId(id).equals("textbox")) {
 						waitTime(3);
 						boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
-								"new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\")")));
+								"new UiScrollable(new UiSelector().scrollable(true).instance(0))"
+								+ ".scrollIntoView(new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\"))")));
 						assertTrue(isdisplayed, "Verify if " + id + " header is displayed");
 						clickAndsendKeysToTextBox(
 								findElementWithRetry(By.xpath("//android.view.View[contains(@content-desc, \""
@@ -434,7 +433,8 @@ public class DemographicDetailsPageEnglish extends DemographicDetailsPage {
 					if (FetchUiSpec.getControlTypeUsingId(id).equals("textbox")) {
 						waitTime(3);
 						boolean isdisplayed = isElementDisplayed(findElementWithRetry(MobileBy.AndroidUIAutomator(
-								"new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\")")));
+								"new UiScrollable(new UiSelector().scrollable(true).instance(0))"
+								+ ".scrollIntoView(new UiSelector().descriptionContains(\"" + FetchUiSpec.getValueUsingId(id) + "\"))")));
 						assertTrue(isdisplayed, "Verify if " + id + " header is displayed");
 						clickAndsendKeysToTextBox(
 								findElementWithRetry(By.xpath("//android.view.View[contains(@content-desc, \""
