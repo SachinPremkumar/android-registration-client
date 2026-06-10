@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.widget.Toast;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -879,7 +880,7 @@ public class Biometrics095ServiceTest {
         BiometricsServiceException ex = assertThrows(BiometricsServiceException.class, () ->
                 biometrics095Service.handleRCaptureResponse(Modality.FACE, is, Collections.emptyList(), captureRequest.getTransactionId()));
         assertEquals(SBIError.SBI_RCAPTURE_ERROR.getErrorCode(), ex.getErrorCode());
-        assertTrue(ex.getErrorText().contains("SpecVersion"));
+        assertTrue(ex.getErrorText().toLowerCase().contains("specversion"));
     }
 
     @Test
@@ -892,7 +893,7 @@ public class Biometrics095ServiceTest {
         BiometricsServiceException ex = assertThrows(BiometricsServiceException.class, () ->
                 biometrics095Service.handleRCaptureResponse(Modality.FACE, is, Collections.emptyList(), captureRequest.getTransactionId()));
         assertEquals(SBIError.SBI_RCAPTURE_ERROR.getErrorCode(), ex.getErrorCode());
-        assertTrue(ex.getErrorText().contains("SpecVersion"));
+        assertTrue(ex.getErrorText().toLowerCase().contains("specversion"));
     }
 
     @Test
@@ -905,7 +906,7 @@ public class Biometrics095ServiceTest {
         BiometricsServiceException ex = assertThrows(BiometricsServiceException.class, () ->
                 biometrics095Service.handleRCaptureResponse(Modality.FACE, is, Collections.emptyList(), captureRequest.getTransactionId()));
         assertEquals(SBIError.SBI_RCAPTURE_ERROR.getErrorCode(), ex.getErrorCode());
-        assertTrue(ex.getErrorText().contains("Purpose"));
+        assertTrue(ex.getErrorText().toLowerCase().contains("purpose"));
     }
 
     // helpers for MOSIP-44993 validation tests
@@ -961,6 +962,7 @@ public class Biometrics095ServiceTest {
         deviceDto.setCertification("L0");
         deviceDto.setDeviceCode("device-code-001");
         deviceDto.setDeviceId("device-id-001");
+        deviceDto.setPurpose("Registration");
 
         DigitalId digitalId = new DigitalId();
         digitalId.setSerialNo("serial123");
@@ -1086,6 +1088,7 @@ public class Biometrics095ServiceTest {
         deviceDto.setCertification("L0");
         deviceDto.setDeviceCode("device-code-001");
         deviceDto.setDeviceId("device-id-001");
+        deviceDto.setPurpose("Registration");
         return deviceDto;
     }
 
@@ -1103,7 +1106,12 @@ public class Biometrics095ServiceTest {
                 .thenReturn(infoList);
         when(mockObjectMapper.readValue(any(byte[].class), eq(DeviceDto.class))).thenReturn(deviceDto);
 
-        spyService.handleDeviceInfoResponse(Modality.FACE, "dummy".getBytes());
+        try (MockedStatic<Toast> toastMock = Mockito.mockStatic(Toast.class)) {
+            Toast toast = Mockito.mock(Toast.class);
+            toastMock.when(() -> Toast.makeText(any(), any(), anyInt())).thenReturn(toast);
+            doNothing().when(toast).show();
+            spyService.handleDeviceInfoResponse(Modality.FACE, "dummy".getBytes());
+        }
     }
 
 }

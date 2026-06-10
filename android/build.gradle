@@ -29,11 +29,16 @@ sonarqube {
         property "sonar.login", "13c9437b3fa54b66de5ec14c4fc2bd04fb55ae77"
         property "sonar.androidLint.reportPaths", "**/reports/lint-results-debug.xml"
 
-        property "sonar.exclusions", "**/src/androidTest/assets/**,**/AppData/Local/Pub/Cache/**,**/app/src/**"
+        property "sonar.exclusions", "**/src/androidTest/assets/**,**/AppData/**,**/app/src/**,**/webviewflutter/**,**/webview_flutter*/**"
         property "sonar.java.binaries", "build/intermediates/javac/debug"
         property "sonar.junit.reportPaths", "build/test-results/testDebugUnitTest"
         // property "sonar.jacoco.reportPaths", "build/jacoco/testReleaseUnitTest.exec"
-        property "sonar.coverage.jacoco.xmlReportPaths", "C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\clientmanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml,"+"C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\keymanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml,"+ "C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\packetmanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml,"+"C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\transliterationmanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml"
+        property "sonar.coverage.exclusions", "**/dao/**,**/dto/**,**/exception/**,**/spi/**,**/entity/**,**/cbeffutil/**,**/constant/**,**/config/**"
+        property "sonar.coverage.jacoco.xmlReportPaths",
+            "${rootProject.rootDir}/../build/clientmanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml," +
+            "${rootProject.rootDir}/../build/keymanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml," +
+            "${rootProject.rootDir}/../build/packetmanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml," +
+            "${rootProject.rootDir}/../build/transliterationmanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml"
     }
 }
 
@@ -60,7 +65,7 @@ ext {
     serverBaseURL = "\"https://api-internal.sandbox.xyz.net\""
     serverHealthCheckPath = "\"/v1/syncdata/actuator/health\""
     serverActuatorInfoPath = "\"/v1/syncdata/actuator/info\""
-    debugPassword = "\"APTyKejHxACQyKBSRciR\""
+    debugPassword = "\"your-debug-password\""
     httpReadTimeout = 60000L
     httpWriteTimeout = 60000L
 
@@ -238,11 +243,18 @@ subprojects { project ->
             }
         }
     }
-    // Suppress lint errors in third-party Flutter plugin subprojects whose
-    // source we cannot modify. Own modules (app, *manager) are excluded.
+    // Suppress lint errors and skip SonarQube analysis for third-party Flutter
+    // plugin subprojects whose source we cannot modify. Own modules are excluded.
     def ownModules = ['app', 'clientmanager', 'keymanager', 'packetmanager', 'transliterationmanager']
     if (!ownModules.contains(project.name)) {
         project.afterEvaluate {
+            // Skip third-party plugin subprojects from SonarQube analysis entirely.
+            // plugins.withId('org.sonarqube') does not fire for subprojects because
+            // the plugin is applied only on the root; access the extension directly.
+            def sonarExt = project.extensions.findByName("sonarqube")
+            if (sonarExt != null) {
+                sonarExt.skipProject = true
+            }
             if (project.extensions.findByName("android") != null) {
                 project.android.lint {
                     disable 'NewerVersionAvailable', 'MissingPermission'

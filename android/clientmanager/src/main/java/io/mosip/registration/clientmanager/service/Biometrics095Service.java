@@ -161,6 +161,16 @@ public class Biometrics095Service extends BiometricsService {
                 String signature = getJWTSignatureWithHeader(bio.getData());
                 byte[] decodedPayload = Base64.getUrlDecoder().decode(payload);
                 CaptureDto captureDto = objectMapper.readValue(decodedPayload, new TypeReference<CaptureDto>() {});
+                // Validate specVersion and purpose
+                if (captureDto.getSpecVersion() == null) {
+                    throw new BiometricsServiceException(SBIError.SBI_RCAPTURE_ERROR.getErrorCode(), "SpecVersion is missing in capture response");
+                }
+                if (!SPEC_VERSION.equals(captureDto.getSpecVersion())) {
+                    throw new BiometricsServiceException(SBIError.SBI_RCAPTURE_ERROR.getErrorCode(), "SpecVersion mismatch: expected " + SPEC_VERSION);
+                }
+                if (!"Registration".equalsIgnoreCase(captureDto.getPurpose())) {
+                    throw new BiometricsServiceException(SBIError.SBI_RCAPTURE_ERROR.getErrorCode(), "Purpose mismatch: expected Registration");
+                }
                 validateResponseTimestamp(captureDto.getTimestamp());
 
                 if (transactionId == null || captureDto.getTransactionId() == null ||

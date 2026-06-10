@@ -789,39 +789,39 @@ public class UserOnboardServiceTest {
 
     @Test
     public void setCaptureTransactionId_delegatesToSessionManager() {
-        try (MockedStatic<SessionManager> sessionManagerMock = Mockito.mockStatic(SessionManager.class)) {
-            SessionManager mockSessionManager = mock(SessionManager.class);
-            sessionManagerMock.when(() -> SessionManager.getSessionManager(context)).thenReturn(mockSessionManager);
-
+        SessionManager mockSessionManager = mock(SessionManager.class);
+        ReflectionTestUtils.setField(SessionManager.class, "manager", mockSessionManager);
+        try {
             userOnboardService.setCaptureTransactionId("TXN-001");
-
             verify(mockSessionManager).setOperatorCaptureTransactionId("TXN-001");
+        } finally {
+            ReflectionTestUtils.setField(SessionManager.class, "manager", null);
         }
     }
 
     @Test
     public void getCaptureTransactionId_withStoredId_returnsTransactionId() {
-        try (MockedStatic<SessionManager> sessionManagerMock = Mockito.mockStatic(SessionManager.class)) {
-            SessionManager mockSessionManager = mock(SessionManager.class);
-            sessionManagerMock.when(() -> SessionManager.getSessionManager(context)).thenReturn(mockSessionManager);
-            when(mockSessionManager.getOperatorCaptureTransactionId()).thenReturn("TXN-001");
-
+        SessionManager mockSessionManager = mock(SessionManager.class);
+        when(mockSessionManager.getOperatorCaptureTransactionId()).thenReturn("TXN-001");
+        ReflectionTestUtils.setField(SessionManager.class, "manager", mockSessionManager);
+        try {
             String result = userOnboardService.getCaptureTransactionId();
-
             assertEquals("TXN-001", result);
+        } finally {
+            ReflectionTestUtils.setField(SessionManager.class, "manager", null);
         }
     }
 
     @Test
     public void getCaptureTransactionId_withNoStoredId_returnsNull() {
-        try (MockedStatic<SessionManager> sessionManagerMock = Mockito.mockStatic(SessionManager.class)) {
-            SessionManager mockSessionManager = mock(SessionManager.class);
-            sessionManagerMock.when(() -> SessionManager.getSessionManager(context)).thenReturn(mockSessionManager);
-            when(mockSessionManager.getOperatorCaptureTransactionId()).thenReturn(null);
-
+        SessionManager mockSessionManager = mock(SessionManager.class);
+        when(mockSessionManager.getOperatorCaptureTransactionId()).thenReturn(null);
+        ReflectionTestUtils.setField(SessionManager.class, "manager", mockSessionManager);
+        try {
             String result = userOnboardService.getCaptureTransactionId();
-
             assertNull(result);
+        } finally {
+            ReflectionTestUtils.setField(SessionManager.class, "manager", null);
         }
     }
 

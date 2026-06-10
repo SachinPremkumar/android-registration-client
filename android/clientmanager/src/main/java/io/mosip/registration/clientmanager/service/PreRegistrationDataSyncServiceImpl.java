@@ -237,7 +237,12 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
             Log.i(TAG,"Pre-Registration ID is not present downloading {}"+ preRegistrationId);
             try {
                 preRegistration = downloadAndSavePacket(preRegistrationId, lastUpdatedTimeStamp);
-            } catch (ExecutionException | InterruptedException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                this.registrationService.getRegistrationDto().getDocuments().clear();
+                this.registrationService.getRegistrationDto().getDemographics().clear();
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
                 this.registrationService.getRegistrationDto().getDocuments().clear();
                 this.registrationService.getRegistrationDto().getDemographics().clear();
                 throw new RuntimeException(e);
@@ -252,7 +257,12 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
             Log.i(TAG,"Pre-Registration ID is not up-to-date downloading {}"+ preRegistrationId);
             try {
                 preRegistration = downloadAndSavePacket(preRegistrationId, lastUpdatedTimeStamp);
-            } catch (ExecutionException | InterruptedException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                this.registrationService.getRegistrationDto().getDocuments().clear();
+                this.registrationService.getRegistrationDto().getDemographics().clear();
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
                 this.registrationService.getRegistrationDto().getDocuments().clear();
                 this.registrationService.getRegistrationDto().getDemographics().clear();
                 throw new RuntimeException(e);

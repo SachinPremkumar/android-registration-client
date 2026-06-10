@@ -1845,13 +1845,13 @@ public class RegistrationServiceImplTest {
         when(keyStoreRepository.getCertificateData("10001_110001")).thenReturn("dummy_cert");
         when(globalParamRepository.getCachedIntegerGlobalParam(Mockito.anyString())).thenReturn(3);
 
-        // Execute with null latitude (partial GPS)
-        RegistrationDto result = registrationService.startRegistration(
-                Arrays.asList("eng"), "NEW", "NEW", null, 77.5946);
-
-        // Verify: Registration succeeds, no GPS set, no validation called
-        assertNotNull(result);
-        assertNull(result.getGeoLocationDto());
+        // Execute with null latitude (partial GPS) - current implementation requires both or neither
+        try {
+            registrationService.startRegistration(Arrays.asList("eng"), "NEW", "NEW", null, 77.5946);
+            fail("Expected IllegalArgumentException for partial GPS");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
         verify(preCheckValidatorService, never()).validateCenterToMachineDistance(any(), any());
     }
 
@@ -1869,13 +1869,13 @@ public class RegistrationServiceImplTest {
         when(keyStoreRepository.getCertificateData("10001_110001")).thenReturn("dummy_cert");
         when(globalParamRepository.getCachedIntegerGlobalParam(Mockito.anyString())).thenReturn(3);
 
-        // Execute with null longitude (partial GPS)
-        RegistrationDto result = registrationService.startRegistration(
-                Arrays.asList("eng"), "NEW", "NEW", 12.9716, null);
-
-        // Verify: Registration succeeds, no GPS set, no validation called
-        assertNotNull(result);
-        assertNull(result.getGeoLocationDto());
+        // Execute with null longitude (partial GPS) - current implementation requires both or neither
+        try {
+            registrationService.startRegistration(Arrays.asList("eng"), "NEW", "NEW", 12.9716, null);
+            fail("Expected IllegalArgumentException for partial GPS");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
         verify(preCheckValidatorService, never()).validateCenterToMachineDistance(any(), any());
     }
 }

@@ -26,6 +26,7 @@ import io.mosip.registration.clientmanager.dao.UserTokenDao;
 import io.mosip.registration.clientmanager.entity.UserDetail;
 import io.mosip.registration.clientmanager.entity.UserPassword;
 import io.mosip.registration.clientmanager.entity.UserToken;
+import io.mosip.registration.clientmanager.repository.GlobalParamRepository;
 import io.mosip.registration.packetmanager.util.HMACUtils2;
 
 import static org.junit.Assert.*;
@@ -42,6 +43,9 @@ public class UserDetailRepositoryTest {
 
     @Mock
     private UserPasswordDao userPasswordDao;
+
+    @Mock
+    private GlobalParamRepository globalParamRepository;
 
     @InjectMocks
     private UserDetailRepository userDetailRepository;
@@ -352,6 +356,194 @@ public class UserDetailRepositoryTest {
             verify(userPasswordDao).insertUserPassword(any(UserPassword.class));
             assertNotNull(password.getSalt());
         }
+    }
+
+    @Test
+    public void isUserLocked_userNotFound_returnsFalse() {
+        when(userDetailDao.getUserDetail("9343")).thenReturn(null);
+        assertFalse(userDetailRepository.isUserLocked("9343"));
+    }
+
+    @Test
+    public void isUserLocked_lockUntilNull_returnsFalse() {
+        UserDetail user = new UserDetail("9343");
+        user.setUserLockTillDtimes(null);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+        assertFalse(userDetailRepository.isUserLocked("9343"));
+    }
+
+    @Test
+    public void isUserLocked_lockUntilInFuture_returnsTrue() {
+        UserDetail user = new UserDetail("9343");
+        user.setUserLockTillDtimes(Long.MAX_VALUE);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+        assertTrue(userDetailRepository.isUserLocked("9343"));
+    }
+
+    @Test
+    public void isUserLocked_lockUntilExpired_resetsCountAndReturnsFalse() {
+        UserDetail user = new UserDetail("9343");
+        user.setUserLockTillDtimes(1L);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+
+        boolean result = userDetailRepository.isUserLocked("9343");
+
+        assertFalse(result);
+        verify(userDetailDao).updateLoginAttemptCount("9343", 0, null);
+    }
+
+    @Test
+    public void recordFailedLoginAttempt_userNotFound_doesNothing() {
+        when(userDetailDao.getUserDetail("9343")).thenReturn(null);
+        userDetailRepository.recordFailedLoginAttempt("9343");
+        verify(userDetailDao, never()).updateLoginAttemptCount(anyString(), anyInt(), any());
+    }
+
+    @Test
+    public void recordFailedLoginAttempt_firstFailure_incrementsCount() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(0);
+        user.setUserLockTillDtimes(null);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+        when(globalParamRepository.getCachedStringInvalidLoginCount()).thenReturn(null);
+        when(globalParamRepository.getCachedStringInvalidLoginTime()).thenReturn(null);
+
+        userDetailRepository.recordFailedLoginAttempt("9343");
+
+        verify(userDetailDao).updateLoginAttemptCount("9343", 1, null);
+    }
+
+    @Test
+    public void recordFailedLoginAttempt_exceedsMaxAttempts_locksUser() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(50);
+        user.setUserLockTillDtimes(null);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+        when(globalParamRepository.getCachedStringInvalidLoginCount()).thenReturn(null);
+        when(globalParamRepository.getCachedStringInvalidLoginTime()).thenReturn(null);
+
+        userDetailRepository.recordFailedLoginAttempt("9343");
+
+        ArgumentCaptor<Long> lockCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(userDetailDao).updateLoginAttemptCount(eq("9343"), eq(51), lockCaptor.capture());
+        assertNotNull(lockCaptor.getValue());
+        assertTrue(lockCaptor.getValue() > System.currentTimeMillis() - 1000);
+    }
+
+    @Test
+    public void recordFailedLoginAttempt_withConfiguredMaxAttempts_usesConfig() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(3);
+        user.setUserLockTillDtimes(null);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+        when(globalParamRepository.getCachedStringInvalidLoginCount()).thenReturn("3");
+        when(globalParamRepository.getCachedStringInvalidLoginTime()).thenReturn("5");
+
+        userDetailRepository.recordFailedLoginAttempt("9343");
+
+        ArgumentCaptor<Long> lockCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(userDetailDao).updateLoginAttemptCount(eq("9343"), eq(4), lockCaptor.capture());
+        assertNotNull(lockCaptor.getValue());
+    }
+
+    @Test
+    public void recordFailedLoginAttempt_withExpiredLock_clearsLock() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(5);
+        user.setUserLockTillDtimes(1L);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+        when(globalParamRepository.getCachedStringInvalidLoginCount()).thenReturn(null);
+        when(globalParamRepository.getCachedStringInvalidLoginTime()).thenReturn(null);
+
+        userDetailRepository.recordFailedLoginAttempt("9343");
+
+        verify(userDetailDao).updateLoginAttemptCount("9343", 6, null);
+    }
+
+    @Test
+    public void resetFailedLoginAttempts_userNotFound_doesNothing() {
+        when(userDetailDao.getUserDetail("9343")).thenReturn(null);
+        userDetailRepository.resetFailedLoginAttempts("9343");
+        verify(userDetailDao, never()).updateLoginAttemptCount(anyString(), anyInt(), any());
+    }
+
+    @Test
+    public void resetFailedLoginAttempts_noFailedAttempts_doesNothing() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(0);
+        user.setUserLockTillDtimes(null);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+
+        userDetailRepository.resetFailedLoginAttempts("9343");
+
+        verify(userDetailDao, never()).updateLoginAttemptCount(anyString(), anyInt(), any());
+    }
+
+    @Test
+    public void resetFailedLoginAttempts_withFailedAttempts_resetsCount() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(5);
+        user.setUserLockTillDtimes(null);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+
+        userDetailRepository.resetFailedLoginAttempts("9343");
+
+        verify(userDetailDao).updateLoginAttemptCount("9343", 0, null);
+    }
+
+    @Test
+    public void resetFailedLoginAttempts_withActiveLock_resetsLock() {
+        UserDetail user = new UserDetail("9343");
+        user.setUnsuccessfulLoginCount(null);
+        user.setUserLockTillDtimes(Long.MAX_VALUE);
+        when(userDetailDao.getUserDetail("9343")).thenReturn(user);
+
+        userDetailRepository.resetFailedLoginAttempts("9343");
+
+        verify(userDetailDao).updateLoginAttemptCount("9343", 0, null);
+    }
+
+    @Test
+    public void saveUserAuthToken_newUser_createsTokenFromScratch() {
+        when(userTokenDao.findByUsername("9343")).thenReturn(null);
+
+        userDetailRepository.saveUserAuthToken("9343", "token", "refresh", 500L, 1000L);
+
+        ArgumentCaptor<UserToken> captor = ArgumentCaptor.forClass(UserToken.class);
+        verify(userTokenDao).insert(captor.capture());
+        assertEquals("token", captor.getValue().getToken());
+        assertEquals("refresh", captor.getValue().getRefreshToken());
+        assertEquals(500L, captor.getValue().getTExpiry());
+        assertEquals(1000L, captor.getValue().getRExpiry());
+    }
+
+    @Test
+    public void saveUserDetail_existingUser_preservesExistingFields() throws Exception {
+        UserDetail existing = new UserDetail("9343");
+        existing.setName("Alice");
+        existing.setOnboarded(true);
+        existing.setSupervisor(true);
+
+        List<UserDetail> existingList = new ArrayList<>();
+        existingList.add(existing);
+        when(userDetailDao.getAllUserDetails()).thenReturn(existingList);
+
+        org.json.JSONArray users = new org.json.JSONArray();
+        org.json.JSONObject userJson = new org.json.JSONObject();
+        userJson.put("userId", "9343");
+        userJson.put("isDeleted", false);
+        userJson.put("isActive", true);
+        userJson.put("regCenterId", "10011");
+        users.put(userJson);
+
+        userDetailRepository.saveUserDetail(users);
+
+        ArgumentCaptor<List<UserDetail>> captor = ArgumentCaptor.forClass(List.class);
+        verify(userDetailDao).truncateAndInsertAll(captor.capture());
+        UserDetail saved = captor.getValue().get(0);
+        assertEquals("Alice", saved.getName());
+        assertTrue(saved.isOnboarded());
+        assertTrue(saved.isSupervisor());
     }
 
 }

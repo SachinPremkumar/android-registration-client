@@ -1,7 +1,9 @@
 package io.mosip.registration.clientmanager.repository;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.util.Log;
@@ -378,5 +380,160 @@ public class GlobalParamRepositoryTest {
     @Test
     public void getCachedStringJobsRestart_whenNotSet_returnsNull() {
         assertNull(globalParamRepository.getCachedStringJobsRestart());
+    }
+
+    @Test
+    public void getCachedReadTimeout_withValidValue_returnsConfiguredLong() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.HTTP_API_READ_TIMEOUT, "30000");
+        assertEquals(30000L, globalParamRepository.getCachedReadTimeout());
+    }
+
+    @Test
+    public void getCachedReadTimeout_withNoValue_returnsZero() {
+        assertEquals(0L, globalParamRepository.getCachedReadTimeout());
+    }
+
+    @Test
+    public void getCachedReadTimeout_withNonNumericValue_returnsZero() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.HTTP_API_READ_TIMEOUT, "not-a-number");
+        assertEquals(0L, globalParamRepository.getCachedReadTimeout());
+    }
+
+    @Test
+    public void getCachedWriteTimeout_withValidValue_returnsConfiguredLong() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.HTTP_API_WRITE_TIMEOUT, "45000");
+        assertEquals(45000L, globalParamRepository.getCachedWriteTimeout());
+    }
+
+    @Test
+    public void getCachedIntCaptureTimeout_withValidValue_returnsIntCast() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.CAPTURE_TIMEOUT, "5000");
+        assertEquals(5000, globalParamRepository.getCachedIntCaptureTimeout());
+    }
+
+    @Test
+    public void getCachedIntCaptureTimeout_withZeroValue_returnsDefault() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.CAPTURE_TIMEOUT, "0");
+        int defaultTimeout = Integer.parseInt(RegistrationConstants.DEFAULT_CAPTURE_TIMEOUT);
+        assertEquals(defaultTimeout, globalParamRepository.getCachedIntCaptureTimeout());
+    }
+
+    @Test
+    public void getCachedIntCaptureTimeout_withNoValue_returnsDefault() {
+        int defaultTimeout = Integer.parseInt(RegistrationConstants.DEFAULT_CAPTURE_TIMEOUT);
+        assertEquals(defaultTimeout, globalParamRepository.getCachedIntCaptureTimeout());
+    }
+
+    @Test
+    public void getCachedIntegerDiskSpaceSize_withValidValue_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.DISK_SPACE, "500");
+        assertEquals(500, globalParamRepository.getCachedIntegerDiskSpaceSize());
+    }
+
+    @Test
+    public void getCachedIntegerPRIDLength_withValidValue_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.PRID_LENGTH, "14");
+        assertEquals(14, globalParamRepository.getCachedIntegerPRIDLength());
+    }
+
+    @Test
+    public void getCachedIntegerUINLength_withValidValue_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.UIN_LENGTH, "12");
+        assertEquals(12, globalParamRepository.getCachedIntegerUINLength());
+    }
+
+    @Test
+    public void getCachedIntegerVIDLength_withValidValue_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.VID_LENGTH, "16");
+        assertEquals(16, globalParamRepository.getCachedIntegerVIDLength());
+    }
+
+    @Test
+    public void getCachedIntRegMaxCountApproveLimit_withValidValue_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.REG_PAK_MAX_CNT_APPRV_LIMIT, "10");
+        assertEquals(10, globalParamRepository.getCachedIntRegMaxCountApproveLimit());
+    }
+
+    @Test
+    public void getCachedStringInvalidLoginCount_whenSet_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.INVALID_LOGIN_COUNT, "5");
+        assertEquals("5", globalParamRepository.getCachedStringInvalidLoginCount());
+    }
+
+    @Test
+    public void getCachedStringInvalidLoginTime_whenSet_returnsValue() {
+        globalParamRepository.saveGlobalParam(RegistrationConstants.INVALID_LOGIN_TIME, "3");
+        assertEquals("3", globalParamRepository.getCachedStringInvalidLoginTime());
+    }
+
+    @Test
+    public void getGlobalParamValue_delegatesToDao() {
+        GlobalParamDao mockDao = mock(GlobalParamDao.class);
+        LocalConfigDAO mockLocal = mock(LocalConfigDAO.class);
+        when(mockDao.getGlobalParams()).thenReturn(Collections.emptyList());
+        when(mockLocal.getLocalConfigurations()).thenReturn(Collections.emptyMap());
+        when(mockDao.getGlobalParam("some.key")).thenReturn("some-value");
+
+        GlobalParamRepository repo = new GlobalParamRepository(mockDao, mockLocal);
+        assertEquals("some-value", repo.getGlobalParamValue("some.key"));
+    }
+
+    @Test
+    public void getGlobalParams_delegatesToDao() {
+        GlobalParamDao mockDao = mock(GlobalParamDao.class);
+        LocalConfigDAO mockLocal = mock(LocalConfigDAO.class);
+        GlobalParam param = new GlobalParam("k", "k", "v", true);
+        when(mockDao.getGlobalParams()).thenReturn(Collections.singletonList(param));
+        when(mockLocal.getLocalConfigurations()).thenReturn(Collections.emptyMap());
+
+        GlobalParamRepository repo = new GlobalParamRepository(mockDao, mockLocal);
+        List<GlobalParam> result = repo.getGlobalParams();
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getBiometricProviderConfig_withProviderParams_returnsNestedMap() {
+        globalParamRepository.saveGlobalParam(
+                "mosip.biometric.sdk.providers.face.vendor1.classname", "com.example.FaceSDK");
+        globalParamRepository.saveGlobalParam(
+                "mosip.biometric.sdk.providers.finger.vendor2.classname", "com.example.FingerSDK");
+
+        Map<String, Map<String, Map<String, String>>> config =
+                globalParamRepository.getBiometricProviderConfig();
+
+        assertNotNull(config);
+        assertTrue(config.containsKey("face"));
+        assertTrue(config.get("face").containsKey("vendor1"));
+        assertEquals("com.example.FaceSDK", config.get("face").get("vendor1").get("classname"));
+    }
+
+    @Test
+    public void getBiometricProviderConfig_secondCall_returnsCachedResult() {
+        globalParamRepository.saveGlobalParam(
+                "mosip.biometric.sdk.providers.face.vendor1.classname", "com.example.FaceSDK");
+
+        Map<String, Map<String, Map<String, String>>> first =
+                globalParamRepository.getBiometricProviderConfig();
+        Map<String, Map<String, Map<String, String>>> second =
+                globalParamRepository.getBiometricProviderConfig();
+
+        assertNotNull(first);
+        // Verify same object returned (cache hit)
+        assertTrue(first == second);
+    }
+
+    @Test
+    public void getBiometricProviderConfig_refreshClearsCacheForNextCall() {
+        globalParamRepository.saveGlobalParam(
+                "mosip.biometric.sdk.providers.face.vendor1.classname", "com.example.FaceSDK");
+        Map<String, Map<String, Map<String, String>>> before =
+                globalParamRepository.getBiometricProviderConfig();
+
+        globalParamRepository.refreshConfigurationCache();
+
+        Map<String, Map<String, Map<String, String>>> after =
+                globalParamRepository.getBiometricProviderConfig();
+        assertNotNull(before);
+        assertNotNull(after);
     }
 }
