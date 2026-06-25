@@ -23,17 +23,21 @@ plugins {
 sonarqube {
     androidVariant 'debug'
     properties {
-        property "sonar.projectKey", "rajapandi1234_android-registration-client"
-        property "sonar.organization", "test-integrations"
+        property "sonar.projectKey", "your-sonar-project-key"
+        property "sonar.organization", "your-sonar-organization"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.login", "13c9437b3fa54b66de5ec14c4fc2bd04fb55ae77"
+        property "sonar.token", "your-sonar-token"
         property "sonar.androidLint.reportPaths", "**/reports/lint-results-debug.xml"
 
         property "sonar.exclusions", "**/src/androidTest/assets/**,**/AppData/Local/Pub/Cache/**,**/app/src/**"
         property "sonar.java.binaries", "build/intermediates/javac/debug"
         property "sonar.junit.reportPaths", "build/test-results/testDebugUnitTest"
         // property "sonar.jacoco.reportPaths", "build/jacoco/testReleaseUnitTest.exec"
-        property "sonar.coverage.jacoco.xmlReportPaths", "C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\clientmanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml,"+"C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\keymanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml,"+ "C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\packetmanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml,"+"C:\\Users\\sachin.sp\\AndroidStudioProjects\\android-registration-client\\build\\transliterationmanager\\reports\\jacoco\\testDebugUnitTestCoverage\\testDebugUnitTestCoverage.xml"
+        property "sonar.coverage.jacoco.xmlReportPaths",
+                "${rootProject.rootDir}/../build/clientmanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml," +
+                "${rootProject.rootDir}/../build/keymanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml," +
+                "${rootProject.rootDir}/../build/packetmanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml," +
+                "${rootProject.rootDir}/../build/transliterationmanager/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml"
     }
 }
 
@@ -57,10 +61,10 @@ ext {
     clientmanagerLibVersionCode = 1
     clientmanagerLibVersionName = "\"1.0.0\""
 
-    serverBaseURL = "\"https://api-internal.qa21.mosip.net\""
+    serverBaseURL = "\"https://api-internal.qajava21.mosip.net\""
     serverHealthCheckPath = "\"/v1/syncdata/actuator/health\""
     serverActuatorInfoPath = "\"/v1/syncdata/actuator/info\""
-    debugPassword = "\"APTyKejHxACQyKBSRciR\""
+    debugPassword = "\"your-debug-password\""
     httpReadTimeout = 60000L
     httpWriteTimeout = 60000L
 
@@ -167,24 +171,39 @@ subprojects {
     }
 }
 
-// AGP 8 fixes (separate block)
 subprojects {
-
     plugins.withId("com.android.library") {
-        def androidExt = project.extensions.findByName("android")
-        if (androidExt != null) {
-            if (androidExt.namespace == null) {
-                androidExt.namespace = "com.auto.${project.name}"
+        def androidExtension = project.extensions.findByName("android")
+        if (androidExtension == null) return
+
+        def existingNamespace = null
+        try { existingNamespace = androidExtension.namespace } catch (ignored) {}
+        if (existingNamespace != null && !existingNamespace.isEmpty()) return
+
+        def resolvedNamespace = null
+
+        def manifestFile = new File(project.projectDir, "src/main/AndroidManifest.xml")
+        if (manifestFile.exists()) {
+            def m = (manifestFile.text =~ /package="([^"]+)"/)
+            if (m.find()) resolvedNamespace = m.group(1)
+        }
+
+        if (resolvedNamespace == null) {
+            ['src/main/kotlin', 'src/main/java'].each { srcPath ->
+                if (resolvedNamespace != null) return
+                def srcDir = new File(project.projectDir, srcPath)
+                if (!srcDir.exists()) return
+                srcDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                    if (resolvedNamespace == null && (f.name.endsWith('.kt') || f.name.endsWith('.java'))) {
+                        def m = (f.text =~ /(?m)^\s*package\s+([\w.]+)/)
+                        if (m.find()) resolvedNamespace = m[0][1]
+                    }
+                }
             }
         }
-    }
 
-    plugins.withId("com.android.application") {
-        def androidExt = project.extensions.findByName("android")
-        if (androidExt != null) {
-            if (androidExt.namespace == null) {
-                androidExt.namespace = "com.auto.${project.name}"
-            }
+        if (resolvedNamespace != null) {
+            androidExtension.namespace = resolvedNamespace
         }
     }
 }
