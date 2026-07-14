@@ -19,7 +19,7 @@ abstract class DynamicResponseService {
 
   Future<List<LanguageData?>> fetchAllLanguages();
 
-  Future<Map<String?, String?>> fetchLocationHierarchyMap();
+  Future<Map<String?, String?>> fetchLocationHierarchyMap(String langCode);
 
   Future<Map<String?, Object?>> fetchPreRegistrationDetails(String preRegId);
 

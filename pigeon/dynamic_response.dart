@@ -65,7 +65,7 @@ abstract class DynamicResponseApi {
   List<LanguageData> getAllLanguages();
 
   @async
-  Map<String, String> getLocationHierarchyMap();
+  Map<String, String> getLocationHierarchyMap(String langCode);
 
   @async
   Map<String, Object> fetchPreRegistrationDetails(String preRegId);

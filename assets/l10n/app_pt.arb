@@ -1,0 +1,372 @@
+{
+  "english": "English",
+  "arabic": "العربية",
+  "french": "Français",
+  "hindi": "हिंदी",
+  "kannada": "ಕನ್ನಡ",
+  "tamil": "தமிழ்",
+  "portuguese": "Português",
+  "locale": "por",
+  "help": "AJUDA",
+  "mosip": "MOSIP",
+  "welcome": "Bem-vindo a",
+  "community_reg_text": "Cliente de Registro MOSIP!",
+  "info_text": "Faça login para acessar os recursos.",
+  "login_text": "Login",
+  "language": "Idioma",
+  "username": "Nome de usuário",
+  "enter_username": "Digite o nome de usuário",
+  "next_button": "PRÓXIMO",
+  "password": "Senha",
+  "enter_password": "Digite a senha",
+  "forgot_password": "ESQUECEU A SENHA?",
+  "login_button": "ENTRAR",
+  "back_button": "VOLTAR",
+  "user_validated": "Usuário validado!",
+  "username_required": "Nome de usuário é obrigatório!",
+  "password_required": "Senha é obrigatória!",
+  "username_exceed": "O nome de usuário não deve exceder 50 caracteres!",
+  "password_exceed": "A senha não deve exceder 50 caracteres!",
+  "username_incorrect": "Usuário não encontrado!",
+  "device_credentials": "Credenciais do Dispositivo",
+  "copy_text": "COPIAR TEXTO",
+  "download_json": "BAIXAR JSON",
+  "copy_message": "Detalhes da máquina copiados para a área de transferência!",
+  "download_message": "Arquivo salvo em Downloads!",
+  "logout": "SAIR",
+  "reset_password": "Redefinir Senha",
+  "login_failed": "Falha no login. Tente novamente!",
+  "password_incorrect": "Senha incorreta!",
+  "machine_not_found": "Máquina não encontrada!",
+  "cred_expired": "Credenciais não encontradas ou expiradas. Tente o login online!",
+  "not_initialized": "A máquina não pôde ser inicializada!",
+  "invalid_user": "Nome de usuário inválido!",
+  "machine_inactive": "A máquina não está ativa!",
+  "center_inactive": "O centro não está ativo!",
+  "sync_completed_succesfully": "Sincronização Concluída com Sucesso",
+  "sync_completed_message": "O sistema será reiniciado em alguns segundos e você será redirecionado para a página de login.",
+  "sync_failed": "Falha na Sincronização",
+  "sync_failed_message": "Entre em contato com o administrador do sistema ou supervisor para obter ajuda.",
+  "policy_key_sync_failed": "Falha na Sincronização da Chave de Política",
+  "ca_certs_sync_failed": "Falha na Sincronização dos Certificados CA",
+  "global_params_sync_failed": "Falha na Sincronização dos Parâmetros Globais",
+  "user_details_sync_failed": "Falha na Sincronização dos Detalhes do Usuário",
+  "id_schema_sync_failed": "Falha na Sincronização do IDSchema",
+  "master_data_sync_failed": "Falha na Sincronização dos Dados Mestres",
+  "network_error": "Nenhuma rede encontrada!",
+  "delete": "EXCLUIR",
+  "newRegistrationProcess": "{language, select, eng{New Registration} ara{تسجيل جديد} fra{Nouvelle inscription} por{Novo Registro} other{New Registration}}",
+  "inactive_logout_heading": "Você ficou inativo",
+  "inactive_logout_description": "Por motivos de segurança, você será desconectado em $TIMER",
+  "seconds": " Segundos.",
+  "minutes": " Minutos.",
+  "logout_button": "SAIR",
+  "stay_logged_in_button": "PERMANECER CONECTADO",
+  "@newRegistrationProcess": {
+    "description": "New Registration Process Header",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "consentScreenName": "{language, select, eng{Consent} ara{موافقة} fra{Consentement} por{Consentimento} other{Consent}}",
+  "@consentScreenName": {
+    "description": "Consent Screen Name",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "demographicsScreenName": "{language, select, eng{Demographic Details} ara{التفاصيل الديموغرافية} fra{Détails démographiques} por{Detalhes Demográficos} other{Demographic Details}}",
+  "@demographicsScreenName": {
+    "description": "Demographic Screen Name",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsScreenName": "{language, select, eng{Document Upload} ara{تحميل الوثيقة} fra{Téléchargement de documents} por{Envio de Documentos} other{Document Upload}}",
+  "@documentsScreenName": {
+    "description": "Document Screen Name",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "biometricsScreenName": "{language, select, eng{Biometric Details} ara{التفاصيل البيومترية} fra{Détails biométriques} por{Detalhes Biométricos} other{Biometric Details}}",
+  "@biometricsScreenName": {
+    "description": "Biometric Screen Name",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationLanguage": "{language, select, eng{Preferred Language of Communication} ara{لغة التواصل المفضلة} fra{Langue de communication préférée} hin{संचार की पसंदीदा भाषा} kan{ಸಂವಹನದ ಆದ್ಯತೆಯ ಭಾಷೆ} tam{விருப்பமான தொடர்பு மொழி} por{Idioma Preferido de Comunicação} other{Notification Languages}}",
+  "@notificationLanguage": {
+    "description": "Notification Language Label",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "dataEntryLanguage": "{language, select, eng{Data Entry Language} ara{لغة إدخال البيانات} fra{Langue de saisie des données} hin{डाटा एंट्री भाषा} kan{ಡೇಟಾ ಎಂಟ್ರಿ ಭಾಷೆ} tam{தரவு நுழைவு மொழி} por{Idioma de Entrada de Dados} other{Notification Languages}}",
+  "@dataEntryLanguage": {
+    "description": "Data Entry Language Label",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "upload_document": "Por favor, envie o documento",
+  "scan": "Digitalizar",
+  "clear": "Limpar",
+  "save": "SALVAR",
+  "retake": "REFAZER",
+  "reference_number": "Digite o Número de Referência",
+  "select_value_message": "Por favor, selecione um valor",
+  "enter_value_message": "Por favor, insira um valor",
+  "invalid_input": "Entrada inválida",
+  "reference_number_validation": "Por favor, insira o número de referência",
+  "referenceNumber": "{language, select, eng{Reference Number} ara{رقم المرجع} fra{Numéro de réference} kan{ಉಲ್ಲೇಖ ಸಂಖ್ಯೆ} hin{संदर्भ संख्या} tam{குறிப்பு எண்} por{Número de Referência} other{Reference Number}}",
+  "@referenceNumber": {
+    "description": "Document reference number",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "synchronize_data": "Sincronizar Dados",
+  "registration_tasks": "Tarefas de Registro",
+  "manage_applications": "Gerenciar Aplicações",
+  "search_application": "Pesquisar por ID da Aplicação",
+  "upload": "ENVIAR",
+  "export": "EXPORTAR",
+  "number_of_application": "Exibindo {number} Aplicações",
+  "@number_of_application": {
+    "description": "A message with a single parameter",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "0"
+      }
+    }
+  },
+  "total_selected_application": "{selected}/{total} Aplicações Selecionadas",
+  "@total_selected_application": {
+    "description": "A message with a two parameter",
+    "placeholders": {
+      "selected": {
+        "type": "int",
+        "example": "0"
+      },
+      "total": {
+        "type": "int",
+        "example": "0"
+      }
+    }
+  },
+  "client_status": "Status do Cliente",
+  "server_status": "Status do Servidor",
+  "review_status": "Status da Revisão",
+  "clear_filter": "Limpar Filtro",
+  "serial_number": "Nº",
+  "application_id": "ID da Aplicação",
+  "reg_date": "Data de Reg.",
+  "reg_type": "Tipo de Reg.",
+  "operator_id": "ID do Operador",
+  "operation_tasks": "Tarefas Operacionais",
+  "system_storage_usage": "Uso de Armazenamento do Sistema",
+  "download_pre_registration_data": "Baixar Dados de Pré-Registro",
+  "update_operator_biomterics": "Atualizar Biometria do Operador",
+  "onboard_operator_biomterics": "Cadastrar Biometria do Operador",
+  "appliction_upload": "Envio de Aplicação",
+  "check_updates": "Verificar Atualizações",
+  "center_remap_sync": "Sincronização de Remapeamento de Centro",
+  "sync_activities": "Atividades de Sincronização",
+  "pending_approval": "Aprovação Pendente",
+  "dashboard": "Painel",
+  "settings": "Configurações",
+  "notifications": "Notificações",
+  "profile": "Perfil",
+  "select_language": "Selecionar Idioma",
+  "select_two_languages": "Por favor, selecione 2 idiomas para entrada de dados.",
+  "language_mandatory": "{mandatoryLanguage} é obrigatório para o residente selecionar de acordo com as diretrizes governamentais. A ordem de seleção determinará a exibição da página para dados demográficos.",
+  "@language_mandatory": {
+    "description": "A message with a single parameter",
+    "placeholders": {
+      "mandatoryLanguage": {
+        "type": "String",
+        "example": "Portuguese"
+      }
+    }
+  },
+  "language_selector_note": "Observe que o idioma pode ser baseado nos dados inseridos durante o Pré-registro.",
+  "cancel": "CANCELAR",
+  "submit": "ENVIAR",
+  "logo_text": "Desenvolvido por MOSIP",
+  "get_onboard": "CADASTRAR-SE",
+  "skip_to_home": "PULAR PARA O INÍCIO",
+  "continue_text": "CONTINUAR",
+  "authenticate": "AUTENTICAR",
+  "new_registration": "NOVO REGISTRO",
+  "go_back": "VOLTAR",
+  "informed": "INFORMADO",
+  "sync_packet": "Sincronizar Pacote",
+  "upload_packet": "Enviar Pacote",
+  "authenticate_using_password": "Autenticação usando Senha",
+  "registration_acknowledgement": "Confirmação de Registro",
+  "print_text": "IMPRIMIR",
+  "hello": "OLÁ",
+  "onboard_process_help": "Toque em 'CADASTRAR-SE' para iniciar o processo de cadastro.",
+  "default_not_found": "Função necessária não encontrada!",
+  "mark_exception": "Marcar Exceção",
+  "threshold": "Limite",
+  "quality": "Qualidade",
+  "attempts": "Tentativas",
+  "comments": "Comentários",
+  "exception_type": "Tipo de Exceção",
+  "permanent": "Permanente",
+  "temporary": "Temporário",
+  "exceptions": "Exceções",
+  "exception": "Exceção",
+  "add_comments_for_marking_the_exception": "Adicione comentários para marcar a exceção",
+  "rescan": "DIGITALIZAR NOVAMENTE",
+  "marking_exceptions_on": "Marcando exceções em",
+  "is_not_allowed": "não é permitido",
+  "capture": "Capturar",
+  "attempts_left": "tentativas restantes",
+  "left_hand": "Mão Esquerda",
+  "left": "Esquerda",
+  "right": "Direita",
+  "right_hand": "Mão Direita",
+  "iris": "Íris",
+  "thumbs": "Polegares",
+  "face": "Rosto",
+  "preview_page": "Pré-visualização",
+  "packet_auth_page": "Autenticação",
+  "acknowledgement_page": "Confirmação",
+  "demographic_information": "Informações Demográficas",
+  "documents": "Documentos",
+  "biometrics": "Biometria",
+  "share": "COMPARTILHAR",
+  "packets_created": "Pacotes Criados",
+  "packets_synced": "Pacotes Sincronizados",
+  "packets_uploaded": "Pacotes Enviados",
+  "users": "Usuários",
+  "user_id": "ID do Usuário",
+  "user_name": "Nome do Usuário",
+  "status": "Status",
+  "active_not_onboarded": "Ativo - Não Cadastrado",
+  "user_inactive": "Usuário Inativo",
+  "onboarded": "Cadastrado",
+  "sync_alert_title": "Sincronize para continuar!",
+  "sync_alert_content": "Máquina ou Centro não está ativo. Ative e sincronize para continuar.",
+  "sync_alert_text": "Sincronizar",
+  "onboarded_successfully": "Você foi cadastrado com sucesso.",
+  "operator_biometric_updated_successfully": "Biometria do operador atualizada com sucesso.",
+  "home": "INÍCIO",
+  "verify_and_save": "VERIFICAR E SALVAR",
+  "supervisors_biometric_onboard": "Cadastro Biométrico do Supervisor",
+  "supervisors_biometric_update": "Atualização Biométrica do Supervisor",
+  "help_topics": "Tópicos de Ajuda",
+  "onboard_request_message": "Toque no botão \"CADASTRAR-SE\" para se cadastrar no portal.",
+  "hello_s": "Olá ",
+  "approve": "APROVAR",
+  "reject": "REJEITAR",
+  "reject_dialog_heading": "Rejeitar Pacote?",
+  "reject_dialog_subheading": "Selecione um motivo para a rejeição do pacote. Você pode alterar sua revisão para aprovar ou redefinir o status da revisão mais tarde.",
+  "reason_rejection": "Motivo da rejeição",
+  "no_reason_selected": "Por favor, selecione um motivo...",
+  "supervisor_auth_heading": "Autenticação do Supervisor",
+  "supervisor_auth_subheading": "Autenticação do Supervisor usando Senha",
+  "uin_number": "Número UIN",
+  "valid_uin": "Por favor, insira um UIN válido",
+  "enter_uin": "Digite o Número UIN",
+  "select_update_attributes": "Selecione todos os atributos que precisam ser atualizados",
+  "logout_action_required": "Ainda há alguma ação necessária!",
+  "logout_warning_message": "Clicar em sair encerrará o processo e pode resultar em perda de dados.",
+  "officer": "Oficial",
+  "operator": "Operador",
+  "supervisor": "Supervisor",
+  "online": "Online",
+  "offline": "Offline",
+  "enabled": "Ativado",
+  "disabled": "Desativado",
+  "logout_success": "Você saiu com sucesso!",
+  "logout_failure": "Algo deu errado, tente novamente mais tarde",
+  "go_to_home": "Ir para o Início",
+  "errors": "{messages, select, REG_TRY_AGAIN{Falha no login. Tente novamente!} REG_INVALID_REQUEST{Senha incorreta!} REG_MACHINE_NOT_FOUND{Este dispositivo ainda não foi cadastrado. Entre em contato com o administrador para obter assistência!} REG_NETWORK_ERROR{Falha no login. Verifique a conexão de rede!} REG_CRED_EXPIRED{Credenciais não encontradas ou expiradas. Tente o login online!} REG_MACHINE_INACTIVE{A máquina não está ativa!} REG_CENTER_INACTIVE{O centro não está ativo!} REG_LOGIN_LOCKED{Limite máximo de tentativas de login atingido. Tente novamente mais tarde!} KER_SYN_AUTH_001{Não foi possível obter o Token de Autenticação!} PAK_APPRVL_MAX_TIME{Ação necessária: Os pacotes registrados pendentes excederam o tempo de aprovação permitido. Elimine o backlog para continuar.} PAK_UPLOAD_MAX_TIME{Ação necessária: Envie ou exporte os pacotes para o servidor antes de prosseguir com o registro.} PAK_UPLOAD_MAX_COUNT{Ação necessária: Limite de pacotes atingido. Exporte ou envie os pacotes existentes antes de criar novos registros.} PAK_DISK_SPACE_LOW{O espaço mínimo necessário não está disponível para criar o pacote.} REG_PKT_APPRVL_CNT_EXCEED{Número máximo de pacotes de registro pendentes de aprovação no cliente atingido. Aprove ou rejeite os pacotes antes de prosseguir com este registro.} OPT_TO_REG_TIME_SYNC_EXCEED{O tempo desde a última sincronização excedeu o limite máximo. Sincronize com o servidor antes de prosseguir com este registro.} OPT_TO_REG_OUTSIDE_LOCATION{A localização da sua máquina cliente está fora do centro de registro. Observe que o registro só pode ser feito dentro do centro de registro} other{'Ocorreu um erro!'}}",
+  "@errors": {
+    "description": "Error messages",
+    "placeholders": {
+      "messages": {
+        "type": "String"
+      }
+    }
+  },
+  "fetch_data": "BUSCAR DADOS",
+  "application_id_not_exist": "ID da Aplicação não existe!",
+  "correct_application_id": "Verifique o ID da Aplicação inserido ou insira um ID correto e tente buscá-lo novamente.",
+  "enter_application_id": "Por favor, insira o ID da Aplicação",
+  "prid_length_greater": "O ID da Aplicação deve ter exatamente {length} dígitos.",
+  "@prid_length_greater": {
+    "placeholders": {
+      "length": {
+        "type": "int"
+      }
+    }
+  },
+  "okay": "OK",
+  "no_internet_connection": "Sem Conexão com a Internet!",
+  "connect_and_retry": "Conecte-se à internet e tente novamente.",
+  "retry": "TENTAR NOVAMENTE",
+  "key": "Chave",
+  "server_value": "Valor do Servidor",
+  "local_value": "Valor Local",
+  "no_configuration_parameters_found": "Nenhum parâmetro de configuração encontrado",
+  "no_configurations_found": "Nenhuma configuração encontrada",
+  "confirm": "CONFIRMAR",
+  "scan_now": "Digitalizar Agora",
+  "enter_additional_info_req_id": "Digite o ID da Solicitação de Informações Adicionais",
+  "additional_info_req_id": "ID da Solicitação de Informações Adicionais",
+  "scheduled_job_settings": "Configurações de Tarefas Agendadas",
+  "no_access_to_this_page": "Você não tem acesso a esta página",
+  "doc_size_exceeded": "O tamanho do arquivo excede o limite de {size}",
+  "@doc_size_exceeded": {
+     "placeholders": {
+       "size": {
+         "type": "String"
+       }
+     }
+  },
+  "age_should_not_be_greater": "A idade não deve ser maior que {age} anos",
+  "@age_should_not_be_greater": {
+     "placeholders": {
+          "age": {
+          "type": "int"
+          }
+     }
+  },
+  "onboard_officer_biometric": "Cadastro Biométrico do Oficial",
+  "update_officer_biometric": "Atualização Biométrica do Oficial",
+  "submit_changes": "Enviar Alterações",
+  "local_preferences_saved_msg": "As Preferências Locais foram salvas com sucesso. É necessário reiniciar o aplicativo para ver as alterações. Deseja sair agora?",
+  "search_for_key": "Pesquisar Chave",
+  "no_devices_found": "Nenhum dispositivo encontrado",
+  "connect_devices_and_scan": "Conecte seus dispositivos e toque em 'Digitalizar' para detectá-los",
+  "sync_restart_dialog_message": "O aplicativo será reiniciado assim que você clicar em Reiniciar, e você será redirecionado para a página de login.",
+  "sync_restart_button": "Reiniciar",
+  "app_restart_message": "Configuração salva com sucesso. Reiniciando o aplicativo...",
+  "select_option": "Selecionar Opção",
+  "cron_expression": "Expressão Cron",
+  "id": "ID",
+  "name": "Nome"
+}

@@ -44,12 +44,27 @@ class _CustomDropDownState extends State<DropDownControl> {
   int maxLen = 0;
   List<GenericData?> list = [];
 
+  // 'default' fieldType doesn't necessarily mean the dropdown is part of the
+  // location hierarchy — some deployments use `default` for plain flat-list
+  // dropdowns too (e.g. maritalStatus, countryOfCitizenship). Membership in
+  // hierarchyReverse is the actual signal, mirroring desktop's
+  // DropDownFxControl.getSubTypeLangCode check.
+  bool get _isHierarchical =>
+      widget.field.fieldType != 'dynamic' &&
+      globalProvider.hierarchyReverse.contains(widget.field.subType);
+
+  String get _mapKey => _isHierarchical
+      ? "${widget.field.group}${widget.field.subType}"
+      : (widget.field.id ?? "");
+
   @override
   void initState() {
     globalProvider = Provider.of<GlobalProvider>(context, listen: false);
     registrationTaskProvider =
         Provider.of<RegistrationTaskProvider>(context, listen: false);
-    setHierarchyReverse();
+    if (_isHierarchical) {
+      setHierarchyReverse();
+    }
     // initializeValue();
     super.initState();
   }
@@ -59,18 +74,13 @@ class _CustomDropDownState extends State<DropDownControl> {
     if (_isFieldIdPresent()) {
       GenericData? response;
       if (widget.field.type == 'simpleType') {
-        if ((globalProvider.fieldInputValue[
-                    "${widget.field.group}${widget.field.subType}"]
-                as Map<String, dynamic>)
+        if ((globalProvider.fieldInputValue[_mapKey] as Map<String, dynamic>)
             .containsKey(langCode)) {
-          response = globalProvider.fieldInputValue[
-                  "${widget.field.group}${widget.field.subType}"][langCode]
+          response = globalProvider.fieldInputValue[_mapKey][langCode]
               as GenericData;
         }
       } else {
-        response = globalProvider
-                .fieldInputValue["${widget.field.group}${widget.field.subType}"]
-            as GenericData;
+        response = globalProvider.fieldInputValue[_mapKey] as GenericData;
       }
       setState(() {
         selected = response;
@@ -85,30 +95,38 @@ class _CustomDropDownState extends State<DropDownControl> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    setState(() {
-      index = globalProvider.hierarchyReverse.indexOf(widget.field.subType!);
-    });
+    if (_isHierarchical) {
+      setState(() {
+        index = globalProvider.hierarchyReverse.indexOf(widget.field.subType!);
+      });
+    }
     _getOptionsList();
   }
 
   void saveData(value) async {
-    for (int i = index! + 1; i < maxLen; i++) {
-      registrationTaskProvider
-          .removeDemographicField(globalProvider.hierarchyReverse[i]);
+    if (_isHierarchical) {
+      for (int i = index! + 1; i < maxLen; i++) {
+        registrationTaskProvider
+            .removeDemographicField(globalProvider.hierarchyReverse[i]);
+      }
     }
     if (value != null) {
       if (widget.field.type == 'simpleType') {
         for (var element in globalProvider.chosenLang) {
           List<GenericData?> temp;
           String code = globalProvider.languageToCodeMapper[element]!;
-          if (index == 1) {
+          if (!_isHierarchical) {
+            temp = await _getDynamicFieldValues(widget.field.subType!, code);
+          } else if (index == 1) {
             temp = await _getLocationValues("$index", code);
-          } else {
+          } else if (index != null && index! > 1) {
             var parentCode = context
                 .read<GlobalProvider>()
                 .groupedHierarchyValues[widget.field.group]![index! - 1];
             temp = await _getLocationValuesBasedOnParent(
                 parentCode, widget.field.subType!, code);
+          } else {
+            temp = [];
           }
           temp.forEach((element) {
             if (element!.code == value.code && element.langCode == code) {
@@ -128,23 +146,25 @@ class _CustomDropDownState extends State<DropDownControl> {
 
   void _saveDataToMap(GenericData? value) {
     String lang = globalProvider.mandatoryLanguages[0]!;
-    for (int i = index! + 1; i < maxLen; i++) {
-      globalProvider.removeFieldFromMap(
-        "${widget.field.group}${globalProvider.hierarchyReverse[i]}",
-        globalProvider.fieldInputValue,
-      );
+    if (_isHierarchical) {
+      for (int i = index! + 1; i < maxLen; i++) {
+        globalProvider.removeFieldFromMap(
+          "${widget.field.group}${globalProvider.hierarchyReverse[i]}",
+          globalProvider.fieldInputValue,
+        );
+      }
     }
     if (value != null) {
       if (widget.field.type == 'simpleType') {
         globalProvider.setLanguageSpecificValue(
-          "${widget.field.group}${widget.field.subType}",
+          _mapKey,
           value,
           lang,
           globalProvider.fieldInputValue,
         );
       } else {
         globalProvider.setInputMapValue(
-          "${widget.field.group}${widget.field.subType}",
+          _mapKey,
           value,
           globalProvider.fieldInputValue,
         );
@@ -155,18 +175,12 @@ class _CustomDropDownState extends State<DropDownControl> {
   void _getSelectedValueFromMap(String lang, List<GenericData?> list) {
     GenericData? response;
     if (widget.field.type == 'simpleType') {
-      if ((globalProvider.fieldInputValue[
-                  "${widget.field.group}${widget.field.subType}"]
-              as Map<String, dynamic>)
+      if ((globalProvider.fieldInputValue[_mapKey] as Map<String, dynamic>)
           .containsKey(lang)) {
-        response = globalProvider
-                .fieldInputValue["${widget.field.group}${widget.field.subType}"]
-            [lang] as GenericData;
+        response = globalProvider.fieldInputValue[_mapKey][lang] as GenericData;
       }
     } else {
-      response = globalProvider
-              .fieldInputValue["${widget.field.group}${widget.field.subType}"]
-          as GenericData;
+      response = globalProvider.fieldInputValue[_mapKey] as GenericData;
     }
     setState(() {
       for (var element in list) {
@@ -199,18 +213,41 @@ class _CustomDropDownState extends State<DropDownControl> {
         parentCode, hierarchyLevelName, langCode, selectedLang);
   }
 
+  Future<List<GenericData?>> _getDynamicFieldValues(
+      String fieldId, String langCode) async {
+    List<String> selectedLang = [];
+    for (var lang in globalProvider.chosenLang) {
+      String code = globalProvider.langToCode(lang);
+      selectedLang.add(code);
+    }
+    List<DynamicFieldData?> temp = await registrationTaskProvider
+        .getFieldValues(fieldId, langCode, selectedLang);
+    return temp
+        .map((e) => e == null
+            ? null
+            : GenericData(
+                name: e.name,
+                code: e.code,
+                langCode: e.langCode,
+                concatenatedName: e.concatenatedName,
+              ))
+        .toList();
+  }
+
   _isFieldIdPresent() {
-    return globalProvider.fieldInputValue
-        .containsKey("${widget.field.group}${widget.field.subType}");
+    return globalProvider.fieldInputValue.containsKey(_mapKey);
   }
 
   _getOptionsList() async {
-    List<GenericData?> temp;
+    List<GenericData?> temp = [];
     String lang = globalProvider.mandatoryLanguages[0]!;
-    if (index == 1) {
+    if (!_isHierarchical) {
+      temp = await _getDynamicFieldValues(
+          widget.field.subType!, globalProvider.selectedLanguage);
+    } else if (index == 1) {
       temp =
           await _getLocationValues("$index", globalProvider.selectedLanguage);
-    } else {
+    } else if (index != null && index! > 1) {
       var parentCode = context
           .watch<GlobalProvider>()
           .groupedHierarchyValues[widget.field.group]![index! - 1];
@@ -304,8 +341,10 @@ class _CustomDropDownState extends State<DropDownControl> {
                   if (value != selected) {
                     saveData(value);
                     _saveDataToMap(value);
-                    globalProvider.setLocationHierarchy(
-                        widget.field.group!, value!.code, index!);
+                    if (_isHierarchical) {
+                      globalProvider.setLocationHierarchy(
+                          widget.field.group!, value!.code, index!);
+                    }
                     String lang = globalProvider.mandatoryLanguages[0]!;
                     _getSelectedValueFromMap(lang, list);
                   }

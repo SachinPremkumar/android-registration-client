@@ -113,6 +113,7 @@ List<String> lang = [
   "eng",
   "ara",
   "fra",
+  "por",
 ];
 
 // bool get isMobile => ScreenUtil().screenWidth < 750;

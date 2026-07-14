@@ -129,8 +129,13 @@ class _HomePageState extends State<HomePage> {
       globalProvider.setAdditionalInfoReqId("");
       for (var screen in sortedScreens) {
         for (var field in screen!.fields!) {
+          // 'default' fieldType alone doesn't mean this dropdown belongs to
+          // the location hierarchy — only fields whose subType actually
+          // matches a synced hierarchy level do (mirrors the check in
+          // DropDownControl._isHierarchical).
           if (field!.controlType == 'dropdown' &&
-              field.fieldType == 'default') {
+              field.fieldType != 'dynamic' &&
+              globalProvider.hierarchyReverse.contains(field.subType)) {
             globalProvider.initializeGroupedHierarchyMap(field.group!);
           }
         }

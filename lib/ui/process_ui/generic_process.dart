@@ -1009,8 +1009,10 @@ class _GenericProcessState extends State<GenericProcess>
                         : EdgeInsets.fromLTRB(60.w, 0, 60.w, 0),
                     child: Text(
                       process.label![context
-                          .read<GlobalProvider>()
-                          .selectedLanguage]!,
+                              .read<GlobalProvider>()
+                              .selectedLanguage] ??
+                          process.label!['eng'] ??
+                          process.label!.values.first,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: pureWhite,
                           fontWeight: semiBold,
@@ -1132,8 +1134,12 @@ class _GenericProcessState extends State<GenericProcess>
                                 Text(
                                   index < size
                                       ? process.screens![index]!.label![context
-                                          .read<GlobalProvider>()
-                                          .selectedLanguage]!
+                                              .read<GlobalProvider>()
+                                              .selectedLanguage] ??
+                                          process.screens![index]!
+                                              .label!['eng'] ??
+                                          process.screens![index]!
+                                              .label!.values.first
                                       : postRegistrationTabs[index - size],
                                   style: Theme.of(context)
                                       .textTheme

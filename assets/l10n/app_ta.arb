@@ -5,6 +5,7 @@
   "hindi": "हिंदी",
   "kannada": "ಕನ್ನಡ",
   "tamil": "தமிழ்",
+  "portuguese": "Português",
   "locale": "tam",
   "help": "உதவி",
   "mosip": "MOSIP",
@@ -55,7 +56,7 @@
   "master_data_sync_failed": "Master Data Sync தோல்வியுற்றது",
   "network_error": "நெட்வொர்க் இல்லை!",
   "delete": "அழி",
-  "newRegistrationProcess": "{language, select, eng{New Registration} ara{تسجيل جديد} fra{Nouvelle inscription} other{New Registration}}",
+  "newRegistrationProcess": "{language, select, eng{New Registration} ara{تسجيل جديد} fra{Nouvelle inscription} por{Novo Registro} other{New Registration}}",
   "inactive_logout_heading": "நீங்கள் சும்மா இருந்தீர்கள்",
   "inactive_logout_description": "பாதுகாப்பு காரணங்களுக்காக, நீங்கள் $TIMER இல் வெளியேற்றப்படுவீர்கள்",
   "seconds": " நொடிகள்.",
@@ -79,7 +80,7 @@
       }
     }
   },
-  "consentScreenName": "{language, select, eng{Consent} ara{موافقة} fra{Consentement} other{Consent}}",
+  "consentScreenName": "{language, select, eng{Consent} ara{موافقة} fra{Consentement} por{Consentimento} other{Consent}}",
   "@consentScreenName": {
     "description": "Consent Screen Name",
     "placeholders": {
@@ -88,7 +89,7 @@
       }
     }
   },
-  "demographicsScreenName": "{language, select, eng{Demographic Details} ara{التفاصيل الديموغرافية} fra{Détails démographiques} other{Demographic Details}}",
+  "demographicsScreenName": "{language, select, eng{Demographic Details} ara{التفاصيل الديموغرافية} fra{Détails démographiques} por{Detalhes Demográficos} other{Demographic Details}}",
   "@demographicsScreenName": {
     "description": "Demographic Screen Name",
     "placeholders": {
@@ -97,7 +98,7 @@
       }
     }
   },
-  "documentsScreenName": "{language, select, eng{Document Upload} ara{تحميل الوثيقة} fra{Téléchargement de documents} other{Document Upload}}",
+  "documentsScreenName": "{language, select, eng{Document Upload} ara{تحميل الوثيقة} fra{Téléchargement de documents} por{Envio de Documentos} other{Document Upload}}",
   "@documentsScreenName": {
     "description": "Document Screen Name",
     "placeholders": {
@@ -106,7 +107,7 @@
       }
     }
   },
-  "biometricsScreenName": "{language, select, eng{Biometric Details} ara{التفاصيل البيومترية} fra{Détails biométriques} other{Biometric Details}}",
+  "biometricsScreenName": "{language, select, eng{Biometric Details} ara{التفاصيل البيومترية} fra{Détails biométriques} por{Detalhes Biométricos} other{Biometric Details}}",
   "@biometricsScreenName": {
     "description": "Biometric Screen Name",
     "placeholders": {
@@ -115,7 +116,7 @@
       }
     }
   },
-  "notificationLanguage": "{language, select, eng{Preferred Language of Communication} ara{لغة التواصل المفضلة} fra{Langue de communication préférée} hin{संचार की पसंदीदा भाषा} kan{ಸಂವಹನದ ಆದ್ಯತೆಯ ಭಾಷೆ} tam{விருப்பமான தொடர்பு மொழி} other{Notification Languages}}",
+  "notificationLanguage": "{language, select, eng{Preferred Language of Communication} ara{لغة التواصل المفضلة} fra{Langue de communication préférée} hin{संचार की पसंदीदा भाषा} kan{ಸಂವಹನದ ಆದ್ಯತೆಯ ಭಾಷೆ} tam{விருப்பமான தொடர்பு மொழி} por{Idioma Preferido de Comunicação} other{Notification Languages}}",
   "@notificationLanguage": {
     "description": "Notification Language Label",
     "placeholders": {
@@ -124,7 +125,7 @@
       }
     }
   },
-  "dataEntryLanguage": "{language, select, eng{Data Entry Language} ara{لغة إدخال البيانات} fra{Langue de saisie des données} hin{डाटा एंट्री भाषा} kan{ಡೇಟಾ ಎಂಟ್ರಿ ಭಾಷೆ} tam{தரவு நுழைவு மொழி} other{Notification Languages}}",
+  "dataEntryLanguage": "{language, select, eng{Data Entry Language} ara{لغة إدخال البيانات} fra{Langue de saisie des données} hin{डाटा एंट्री भाषा} kan{ಡೇಟಾ ಎಂಟ್ರಿ ಭಾಷೆ} tam{தரவு நுழைவு மொழி} por{Idioma de Entrada de Dados} other{Notification Languages}}",
   "@dataEntryLanguage": {
     "description": "Data Entry Language Label",
     "placeholders": {
@@ -248,7 +249,7 @@
   "enter_value_message": "தயவுசெய்து ஒரு மதிப்பை உள்ளிடவும்",
   "invalid_input": "தவறான உள்ளீடு",
   "reference_number_validation": "தயவுசெய்து ஆதார் எண்ணை உள்ளிடவும்",
-  "referenceNumber": "{language, select, eng{Reference Number} ara{رقم المرجع} fra{Numéro de réference} kan{ಉಲ್ಲೇಖ ಸಂಖ್ಯೆ} hin{संदर्भ संख्या} tam{குறிப்பு எண்} other{Reference Number}}",
+  "referenceNumber": "{language, select, eng{Reference Number} ara{رقم المرجع} fra{Numéro de réference} kan{ಉಲ್ಲೇಖ ಸಂಖ್ಯೆ} hin{संदर्भ संख्या} tam{குறிப்பு எண்} por{Número de Referência} other{Reference Number}}",
   "@referenceNumber": {
     "description": "Document reference number",
     "placeholders": {

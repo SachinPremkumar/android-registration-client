@@ -202,10 +202,10 @@ public class DynamicDetailsApi implements DynamicResponsePigeon.DynamicResponseA
     }
 
     @Override
-    public void getLocationHierarchyMap(@NonNull DynamicResponsePigeon.Result<Map<String, String>> result) {
+    public void getLocationHierarchyMap(@NonNull String langCode, @NonNull DynamicResponsePigeon.Result<Map<String, String>> result) {
         Map<String, String> hierarchyMap = new HashMap<>();
         try {
-            List<Location> locationList = this.masterDataService.findAllLocationsByLangCode("eng");
+            List<Location> locationList = this.masterDataService.findAllLocationsByLangCode(langCode);
             locationList.forEach((locationHierarchy) -> {
                 String levelName = locationHierarchy.getHierarchyName();
                 int level = locationHierarchy.getHierarchyLevel();

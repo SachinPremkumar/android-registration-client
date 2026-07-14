@@ -568,9 +568,13 @@ class GlobalProvider with ChangeNotifier {
   }
 
   _getDynamicFieldValues(Field field) async {
-    if (field.fieldType == "dynamic") {
+    // fieldDisplayValues is only ever read by ButtonControl (controlType
+    // "button"); gate on that directly rather than fieldType, since fieldType
+    // isn't a reliable signal for "needs a fetched value list" (see
+    // DropDownControl._isHierarchical for the same lesson).
+    if (field.controlType == "button") {
       fieldDisplayValues[field.id!] =
-          await CommonDetailsApi().getFieldValues(field.id!, "eng");
+          await CommonDetailsApi().getFieldValues(field.id!, selectedLanguage);
     }
     if (field.templateName != null) {
       List values = List.empty(growable: true);
@@ -882,8 +886,14 @@ class GlobalProvider with ChangeNotifier {
   }
 
   initializeLocationHierarchyMap() async {
+    // Location-hierarchy schema fields (e.g. island/district/town) carry
+    // subType text in the registration's data-entry language
+    // (mandatoryLanguages[0]), not the operator's own app/login locale
+    // (selectedLanguage) — those are independent settings.
+    String langCode =
+        _mandatoryLanguages.isNotEmpty ? (_mandatoryLanguages[0] ?? "eng") : "eng";
     Map<String?, String?> hierarchyMap =
-        await dynamicResponseService.fetchLocationHierarchyMap();
+        await dynamicResponseService.fetchLocationHierarchyMap(langCode);
     _locationHierarchyMap = hierarchyMap;
     List<String> hReverse = [];
     _locationHierarchyMap.forEach((key, value) {
