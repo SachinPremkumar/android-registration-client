@@ -6,7 +6,6 @@ import static io.mosip.registration.clientmanager.config.SessionManager.USER_NAM
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-import android.widget.Toast;
 
 import io.mosip.registration.clientmanager.BuildConfig;
 import io.mosip.registration.clientmanager.R;
@@ -81,6 +80,9 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
     ExecutorService executorServiceForPreReg = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     public static final String APPLICATION_ID_SYNC_FAILED = "application_id_sync_failed";
     public static final String ERROR_FETCH_PRE_REG_PACKET = "Failed to fetch pre-reg packet";
+    // Server-side "no data" response, not a real failure - no pre-registration records
+    // exist yet for this reg center/date range.
+    public static final String ERROR_CODE_NO_RECORDS_FOUND = "PRG_BOOK_RCI_032";
 
     public PreRegistrationDataSyncServiceImpl(Context context,PreRegistrationDataSyncDao preRegistrationDao,MasterDataService masterDataService,SyncRestService syncRestService,PreRegZipHandlingService preRegZipHandlingService,PreRegistrationList preRegistration,GlobalParamRepository globalParamRepository,RegistrationService registrationService){
         this.context = context;
@@ -94,6 +96,11 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
         sharedPreferences = this.context.getSharedPreferences(
                 this.context.getString(R.string.app_name),
                 Context.MODE_PRIVATE);
+    }
+
+    @Override
+    public String getLastFetchPreRegistrationIdsResult() {
+        return result;
     }
 
     @Override
@@ -149,24 +156,28 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
                                 getPreRegistrationPackets(preRegIds);
                                 Log.i(TAG,"Fetching Application data ended successfully");
                             }
-                            Toast.makeText(context, "Application Id Sync Completed", Toast.LENGTH_LONG).show();
+                            Log.i(TAG, "Application Id Sync Completed");
                             result = "";
                             onFinish.run();
                         } catch (Exception e) {
                             result = APPLICATION_ID_SYNC_FAILED;
                             Log.e(TAG, APPLICATION_ID_SYNC_FAILED, e);
-                            Toast.makeText(context, "Application Id Sync failed " + error.getMessage(), Toast.LENGTH_LONG).show();
                             onFinish.run();
                         }
 
+                    } else if (ERROR_CODE_NO_RECORDS_FOUND.equalsIgnoreCase(error.getErrorCode())) {
+                        // Not a failure - simply no pre-registration data available yet.
+                        Log.i(TAG, "No pre-registration records found: " + error.getMessage());
+                        result = "";
+                        onFinish.run();
                     } else {
                         result = APPLICATION_ID_SYNC_FAILED;
-                        Toast.makeText(context, "Application Id Sync failed " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Application Id Sync failed " + error.getMessage());
                         onFinish.run();
                     }
                 } else {
                     result = APPLICATION_ID_SYNC_FAILED;
-                    Toast.makeText(context, "Application Id Sync failed with status code : " + response.code(), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Application Id Sync failed with status code : " + response.code());
                     onFinish.run();
                 }
             }
@@ -174,7 +185,6 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
             public void onFailure(Call<ResponseWrapper<PreRegistrationIdsDto>> call, Throwable t) {
                 Log.e(TAG,"Application Data Sync "+ t);
                 result = APPLICATION_ID_SYNC_FAILED;
-                Toast.makeText(context, "Application Id Sync failed", Toast.LENGTH_LONG).show();
                 onFinish.run();
             }
         });
@@ -245,9 +255,21 @@ public class PreRegistrationDataSyncServiceImpl implements PreRegistrationDataSy
             return preRegistration;
         }
 
-        Timestamp updatedPreRegTimeStamp = Timestamp.valueOf(preRegistration.getLastUpdatedPreRegTimeStamp());
-        Timestamp lastUpdatedTime = Timestamp.valueOf(lastUpdatedTimeStamp);
-        if(lastUpdatedTimeStamp == null ||
+        Timestamp updatedPreRegTimeStamp;
+        try {
+            updatedPreRegTimeStamp = Timestamp.valueOf(preRegistration.getLastUpdatedPreRegTimeStamp());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.e(TAG, "Invalid cached lastUpdatedPreRegTimeStamp for " + preRegistrationId + ", forcing re-download", e);
+            updatedPreRegTimeStamp = new Timestamp(0L);
+        }
+        Timestamp lastUpdatedTime;
+        try {
+            lastUpdatedTime = lastUpdatedTimeStamp == null ? null : Timestamp.valueOf(lastUpdatedTimeStamp);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid lastUpdatedTimeStamp received for " + preRegistrationId + ", forcing re-download", e);
+            lastUpdatedTime = null;
+        }
+        if(lastUpdatedTime == null ||
                 updatedPreRegTimeStamp.before(lastUpdatedTime)) {
             Log.i(TAG,"Pre-Registration ID is not up-to-date downloading {}"+ preRegistrationId);
             try {

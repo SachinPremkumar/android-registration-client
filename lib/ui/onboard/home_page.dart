@@ -56,6 +56,7 @@ class _HomePageState extends State<HomePage> {
   late ConnectivityProvider connectivityProvider;
   late AppLocalizations appLocalizations = AppLocalizations.of(context)!;
   String lastOperatorUpdateBiometricTime = "";
+  String lastPreRegSyncTimeFormatted = "";
 
   @override
   void initState() {
@@ -69,6 +70,7 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await syncProvider.checkCenterRemapState();
       await syncProvider.loadLastRemapSyncTime();
+      await syncProvider.loadLastPreRegSyncTime();
       // Check GPS status to update the indicator in profile
       await connectivityProvider.checkGPSStatus();
       // Fetch location if GPS is enabled
@@ -85,29 +87,68 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void syncData(BuildContext context) async {
+  void _showRetrySnackBar(String message, VoidCallback onRetry) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: appLocalizations.retry,
+          onPressed: onRetry,
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _canStartSync() async {
+    if (syncProvider.isSyncInProgress || syncProvider.isPreRegSyncInProgress) {
+      return false;
+    }
     await connectivityProvider.checkNetworkConnection();
+    if (!mounted) return false;
     if (!connectivityProvider.isConnected) {
       _showInSnackBar(appLocalizations.network_error);
-      return;
+      return false;
     }
     if (syncProvider.isCenterRemapped) {
       _showInSnackBar(appLocalizations.remap_operation_blocked);
-      return;
+      return false;
     }
+    return true;
+  }
+
+  void syncData(BuildContext context) async {
+    if (!await _canStartSync()) return;
     await syncProvider.manualSync();
     log("Manual Sync Completed!");
-    if (syncProvider.isCenterRemapped) return;
+    if (syncProvider.isCenterRemapped) {
+      return;
+    }
+    if (syncProvider.syncError != null) {
+      _showRetrySnackBar(
+          appLocalizations.master_data_sync_failed, () => syncData(context));
+      return;
+    }
     syncProvider.isSyncAndUploadInProgress = true;
     await syncProvider.batchJob();
     syncProvider.isSyncAndUploadInProgress = false;
-    await syncProvider.getPreRegistrationIds();
     await registrationTaskProvider.getListOfProcesses();
     await globalProvider.getRegCenterName(
         globalProvider.centerId, globalProvider.selectedLanguage);
     await globalProvider.getAudit("REG-SYNC-002", "REG-MOD-102");
     await globalProvider.initializeLanguageDataList(true);
     await globalProvider.initializeLocationHierarchyMap();
+    _showInSnackBar(appLocalizations.synchronise_data_success);
+  }
+
+  void downloadPreRegistrationData(BuildContext context) async {
+    if (!await _canStartSync()) return;
+    await syncProvider.getPreRegistrationIds();
+    if (syncProvider.preRegSyncError != null) {
+      _showRetrySnackBar(appLocalizations.pre_reg_sync_failed,
+          () => downloadPreRegistrationData(context));
+    } else {
+      _showInSnackBar(appLocalizations.download_pre_reg_success);
+    }
   }
 
   void onCentreRemap(BuildContext context) async {
@@ -171,8 +212,12 @@ class _HomePageState extends State<HomePage> {
       return Container();
     }
     List<Screen?> sortedScreens;
-    sortedScreens = process.screens!.toList()..sort((e1, e2) => e1!.order!.compareTo(e2!.order!));
-    if (process.flow == "NEW" || process.flow == "UPDATE" || process.flow == "LOST" || process.flow == "CORRECTION") {
+    sortedScreens = process.screens!.toList()
+      ..sort((e1, e2) => e1!.order!.compareTo(e2!.order!));
+    if (process.flow == "NEW" ||
+        process.flow == "UPDATE" ||
+        process.flow == "LOST" ||
+        process.flow == "CORRECTION") {
       globalProvider.clearRegistrationProcessData();
       globalProvider.setPreRegistrationId("");
       globalProvider.setAdditionalInfoReqId("");
@@ -256,6 +301,19 @@ class _HomePageState extends State<HomePage> {
       lastOperatorUpdateBiometricTime = "";
     }
 
+    final watchedSyncProvider = context.watch<SyncProvider>();
+    final bool isAnySyncInProgress = watchedSyncProvider.isSyncInProgress ||
+        watchedSyncProvider.isPreRegSyncInProgress;
+
+    final lastPreRegSyncTime = watchedSyncProvider.lastPreRegSyncTime;
+    // getLastSyncTimeByJobId returns an already human-readable string (or
+    // "NA" if never synced) rather than an ISO8601 timestamp, so it's
+    // displayed as-is instead of being re-parsed/reformatted.
+    lastPreRegSyncTimeFormatted =
+        (lastPreRegSyncTime == null || lastPreRegSyncTime == "NA")
+            ? ""
+            : lastPreRegSyncTime;
+
     List<Map<String, dynamic>> operationalTasks = [
       {
         "icon": SvgPicture.asset(
@@ -265,22 +323,28 @@ class _HomePageState extends State<HomePage> {
         ),
         "title": appLocalizations.synchronize_data,
         "onTap": syncData,
-        "subtitle": context.watch<SyncProvider>().lastSuccessfulSyncTime != ""
+        "disabled": isAnySyncInProgress,
+        "subtitle": watchedSyncProvider.lastSuccessfulSyncTime != ""
             ? DateFormat("EEEE d MMMM, hh:mma")
-                .format(DateTime.parse(
-                        context.watch<SyncProvider>().lastSuccessfulSyncTime)
-                    .toLocal())
+                .format(
+                    DateTime.parse(watchedSyncProvider.lastSuccessfulSyncTime)
+                        .toLocal())
                 .toString()
             : "Last Sync time not found",
       },
-      // {
-      //   "icon": SvgPicture.asset(
-      //     "assets/svg/Uploading Local - Registration Data.svg",
-      //   ),
-      //   "title": appLocalizations.download_pre_registration_data,
-      //   "onTap": () {},
-      //   "subtitle": "Last downloaded on Friday 24 Mar, 12:15PM"
-      // },
+      {
+        "icon": const Icon(
+          Icons.download_rounded,
+          color: Color(0xff214FBF),
+          size: 20,
+        ),
+        "title": appLocalizations.download_pre_registration_data,
+        "onTap": downloadPreRegistrationData,
+        "disabled": isAnySyncInProgress,
+        "subtitle": lastPreRegSyncTimeFormatted == ""
+            ? "Last download time not found"
+            : lastPreRegSyncTimeFormatted,
+      },
       {
         "icon": SvgPicture.asset(
           "assets/svg/Updating Operator Biometrics.svg",
@@ -327,19 +391,19 @@ class _HomePageState extends State<HomePage> {
       //   "onTap": () {},
       //   "subtitle": "Last updated on Wednesday 12 Apr, 11:20PM"
       // },
-        {
-          "icon": const Icon(
-            Icons.location_on,
-            color: Color(0xff214FBF),
-            size: 20,
-          ),
-          "title": appLocalizations.center_remap_sync,
-          "onTap": onCentreRemap,
-          "subtitle": context.watch<SyncProvider>().lastRemapSyncTime != null
-              ? "${appLocalizations.remap_synced_at} ${DateFormat("EEEE d MMMM, hh:mma").format(context.watch<SyncProvider>().lastRemapSyncTime!.toLocal())}"
-              : "",
-          "isRemapHighlight": true,
-        },
+      {
+        "icon": const Icon(
+          Icons.location_on,
+          color: Color(0xff214FBF),
+          size: 20,
+        ),
+        "title": appLocalizations.center_remap_sync,
+        "onTap": onCentreRemap,
+        "subtitle": context.watch<SyncProvider>().lastRemapSyncTime != null
+            ? "${appLocalizations.remap_synced_at} ${DateFormat("EEEE d MMMM, hh:mma").format(context.watch<SyncProvider>().lastRemapSyncTime!.toLocal())}"
+            : "",
+        "isRemapHighlight": true,
+      },
       // {
       //   "icon": SvgPicture.asset(
       //     "assets/svg/Uploading Local - Registration Data.svg",

@@ -22,6 +22,7 @@ class HomePageCard extends StatefulWidget {
     required this.index,
     required this.ontap,
     required this.subtitle,
+    this.enabled = true,
   });
 
   final Widget icon;
@@ -29,6 +30,7 @@ class HomePageCard extends StatefulWidget {
   final int index;
   final String? subtitle;
   final void Function() ontap;
+  final bool enabled;
 
   @override
   State<HomePageCard> createState() => _HomePageCardState();
@@ -57,43 +59,46 @@ class _HomePageCardState extends State<HomePageCard> {
   Widget build(BuildContext context) {
     updateSubTitle(widget.index);
 
-    return Card(
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(vertical: 4.w, horizontal: 12.h),
-        onTap: widget.ontap,
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-              color: const Color(0xffF4F7FF),
-              borderRadius: BorderRadius.circular(8)),
-          child: widget.icon,
-        ),
-        title: Text(
-          widget.title,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: semiBold,
-              fontSize: 15,
-              color: const Color(0xff333333)),
-        ),
-        subtitle: widget.subtitle == null
-            ? (subtitle == null
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      subtitle ?? "",
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xff6F6E6E)),
-                    ),
-                  ))
-            : Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  widget.subtitle ?? "",
-                  style:
-                      const TextStyle(fontSize: 12, color: Color(0xff6F6E6E)),
+    return Opacity(
+      opacity: widget.enabled ? 1.0 : 0.5,
+      child: Card(
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(vertical: 4.w, horizontal: 12.h),
+          onTap: widget.enabled ? widget.ontap : null,
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                color: const Color(0xffF4F7FF),
+                borderRadius: BorderRadius.circular(8)),
+            child: widget.icon,
+          ),
+          title: Text(
+            widget.title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: semiBold,
+                fontSize: 15,
+                color: const Color(0xff333333)),
+          ),
+          subtitle: widget.subtitle == null
+              ? (subtitle == null
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        subtitle ?? "",
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xff6F6E6E)),
+                      ),
+                    ))
+              : Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    widget.subtitle ?? "",
+                    style:
+                        const TextStyle(fontSize: 12, color: Color(0xff6F6E6E)),
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

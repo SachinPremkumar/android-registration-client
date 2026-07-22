@@ -391,16 +391,28 @@ public class MasterDataSyncApi implements MasterDataSyncPigeon.SyncApi {
         if (NetworkUtils.isNetworkConnected(this.context)) {
             try {
                 preRegistrationDataSyncService.fetchPreRegistrationIds(() -> {
-                    Log.i(TAG, "Application Id's Sync Completed");
-                    result.success("Application Id's Sync Completed.");
-                    onSyncJobComplete(jobId, true, false);
+                    String syncResult = preRegistrationDataSyncService.getLastFetchPreRegistrationIdsResult();
+                    boolean success = syncResult == null || syncResult.isEmpty();
+                    if (success) {
+                        Log.i(TAG, "Application Id's Sync Completed");
+                        // Persist timestamp so UI can show Last synced immediately when triggered manually
+                        masterDataService.logLastSyncCompletionDateTime(jobId);
+                        result.success("Application Id's Sync Completed.");
+                    } else {
+                        Log.e(TAG, "Application Id's Sync Failed: " + syncResult);
+                        result.error(new IllegalStateException(syncResult));
+                    }
+                    onSyncJobComplete(jobId, success, false);
                 }, jobId);
             } catch (Exception e) {
+                Log.e(TAG, "Pre-Registration Id's Sync Failed.", e);
                 e.printStackTrace();
                 onSyncJobComplete(jobId, false, false);
+                result.error(e);
             }
         } else {
             onSyncJobComplete(jobId, false, false);
+            result.error(new IllegalStateException("No network connection available"));
         }
     }
 
@@ -726,6 +738,7 @@ public class MasterDataSyncApi implements MasterDataSyncPigeon.SyncApi {
                     case "preRegistrationDataSyncJob":
                         preRegistrationDataSyncService.fetchPreRegistrationIds(() -> {
                             Log.i(TAG, "Application Id's Sync Completed");
+                            masterDataService.logLastSyncCompletionDateTime(jobId);
                             onSyncJobComplete(jobId, true, false);
                         }, jobId);
                         break;

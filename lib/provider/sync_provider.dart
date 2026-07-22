@@ -37,9 +37,16 @@ class SyncProvider with ChangeNotifier {
   bool _masterDataSyncSuccess = false;
   bool _cacertsSyncSuccess = false;
   bool _kernelCertsSyncSuccess = false;
-  bool isSyncInProgress = false;
+
+  bool _isSyncInProgress = false;
   bool _isSyncAndUploadInProgress = false;
   bool _isCenterRemapped = false;
+
+  bool _isPreRegSyncInProgress = false;
+  String? _preRegSyncError;
+  String? _lastPreRegSyncTime;
+
+  String? _syncError;
 
   final List<RemapSyncStatus> _remapStepStatuses =
       List.filled(4, RemapSyncStatus.idle);
@@ -58,6 +65,12 @@ class SyncProvider with ChangeNotifier {
   bool get isGlobalSyncInProgress => _isGlobalSyncInProgress;
   bool get isSyncAndUploadInProgress => _isSyncAndUploadInProgress;
   bool get isCenterRemapped => _isCenterRemapped;
+
+  bool get isPreRegSyncInProgress => _isPreRegSyncInProgress;
+  String? get preRegSyncError => _preRegSyncError;
+  String? get lastPreRegSyncTime => _lastPreRegSyncTime;
+
+  String? get syncError => _syncError;
 
   /// Per-step status for the remap sync screen (index 0 = step 1 … index 3 = step 4).
   List<RemapSyncStatus> get remapStepStatuses => List.unmodifiable(_remapStepStatuses);
@@ -113,6 +126,13 @@ class SyncProvider with ChangeNotifier {
 
   set isSyncing(bool value) {
     _isSyncing = value;
+    notifyListeners();
+  }
+
+  bool get isSyncInProgress => _isSyncInProgress;
+
+  set isSyncInProgress(bool value) {
+    _isSyncInProgress = value;
     notifyListeners();
   }
 
@@ -335,36 +355,57 @@ class SyncProvider with ChangeNotifier {
     }
   }
 
-  manualSync() async {
+  Future<void> manualSync() async {
     isSyncInProgress = true;
-    // Get the job ID finder function
-    String Function(String) findJobIdByApiName = await _getJobIdFinder();
-    
-    Sync syncResult = await syncResponseService.getMasterDataSync(true, findJobIdByApiName("masterSyncJob"));
-    if (syncResult.errorCode == 'KER-SNC-149') {
-      isSyncInProgress = false;
-      _onRemapDetected();
-      return;
-    }
-    if (syncResult.errorCode != null && syncResult.errorCode!.isEmpty) {
-      syncResult = await syncResponseService.getIDSchemaSync(true, findJobIdByApiName("latestIdSchemaSyncJob"));
+    _syncError = null;
+    bool completed = false;
+    try {
+      // Get the job ID finder function
+      String Function(String) findJobIdByApiName = await _getJobIdFinder();
+
+      Sync syncResult = await syncResponseService.getMasterDataSync(
+          true, findJobIdByApiName("masterSyncJob"));
+      if (syncResult.errorCode == 'KER-SNC-149') {
+        _onRemapDetected();
+        return;
+      }
       if (syncResult.errorCode != null && syncResult.errorCode!.isEmpty) {
-        syncResult = await syncResponseService.getUserDetailsSync(true, findJobIdByApiName("userDetailServiceJob"));
+        syncResult = await syncResponseService.getIDSchemaSync(
+            true, findJobIdByApiName("latestIdSchemaSyncJob"));
         if (syncResult.errorCode != null && syncResult.errorCode!.isEmpty) {
-          syncResult = await syncResponseService.getGlobalParamsSync(true, findJobIdByApiName("synchConfigDataJob"));
+          syncResult = await syncResponseService.getUserDetailsSync(
+              true, findJobIdByApiName("userDetailServiceJob"));
           if (syncResult.errorCode != null && syncResult.errorCode!.isEmpty) {
-            syncResult = await syncResponseService.getKernelCertsSync(true, findJobIdByApiName("publicKeySyncJob"));
+            syncResult = await syncResponseService.getGlobalParamsSync(
+                true, findJobIdByApiName("synchConfigDataJob"));
             if (syncResult.errorCode != null && syncResult.errorCode!.isEmpty) {
-              syncResult = await syncResponseService.getPolicyKeySync(true, findJobIdByApiName("keyPolicySyncJob"));
-              if (syncResult.errorCode != null && syncResult.errorCode!.isEmpty) {
-                syncResult = await syncResponseService.getCaCertsSync(true, findJobIdByApiName("syncCertificateJob"));
-                await getLastSyncTime();
-                isSyncInProgress= false;
+              syncResult = await syncResponseService.getKernelCertsSync(
+                  true, findJobIdByApiName("publicKeySyncJob"));
+              if (syncResult.errorCode != null &&
+                  syncResult.errorCode!.isEmpty) {
+                syncResult = await syncResponseService.getPolicyKeySync(
+                    true, findJobIdByApiName("keyPolicySyncJob"));
+                if (syncResult.errorCode != null &&
+                    syncResult.errorCode!.isEmpty) {
+                  syncResult = await syncResponseService.getCaCertsSync(
+                      true, findJobIdByApiName("syncCertificateJob"));
+                  await getLastSyncTime();
+                  completed = true;
+                }
               }
             }
           }
         }
       }
+      if (!completed) {
+        _syncError = syncResult.errorCode;
+      }
+    } catch (e) {
+      log("Manual Sync Failed: $e");
+      _syncError = e.toString();
+    } finally {
+      isSyncInProgress = false;
+      notifyListeners();
     }
   }
 
@@ -372,9 +413,34 @@ class SyncProvider with ChangeNotifier {
     await syncResponseService.batchJob();
   }
 
-  getPreRegistrationIds() async {
-    String Function(String) findJobIdByApiName = await _getJobIdFinder();
-    await syncResponseService.getPreRegIds(findJobIdByApiName("preRegistrationDataSyncJob"));
+  Future<void> loadLastPreRegSyncTime() async {
+    try {
+      String Function(String) findJobIdByApiName = await _getJobIdFinder();
+      final jobId = findJobIdByApiName("preRegistrationDataSyncJob");
+      if (jobId.isEmpty) return;
+      _lastPreRegSyncTime = await getLastSyncTimeByJobId(jobId);
+      notifyListeners();
+    } catch (e) {
+      log('Failed to load last pre-reg sync time: $e');
+    }
+  }
+
+  Future<void> getPreRegistrationIds() async {
+    _isPreRegSyncInProgress = true;
+    _preRegSyncError = null;
+    notifyListeners();
+    try {
+      String Function(String) findJobIdByApiName = await _getJobIdFinder();
+      final jobId = findJobIdByApiName("preRegistrationDataSyncJob");
+      await syncResponseService.getPreRegIds(jobId);
+      _lastPreRegSyncTime = await getLastSyncTimeByJobId(jobId);
+    } catch (e) {
+      log("Pre-Registration Id's Sync Failed: $e");
+      _preRegSyncError = e.toString();
+    } finally {
+      _isPreRegSyncInProgress = false;
+      notifyListeners();
+    }
   }
 
   Future<String?> getLastSyncTimeByJobId(String jobId) async {

@@ -182,6 +182,7 @@ class _OperationalTasksState extends State<OperationalTasks> {
         widget.operationalTasks.length,
         (index) {
           final task = widget.operationalTasks[index];
+          final bool enabled = task["disabled"] != true;
           return isMobileSize
               ? Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -191,6 +192,7 @@ class _OperationalTasksState extends State<OperationalTasks> {
                     title: task["title"] as String,
                     ontap: () async => task["onTap"](context),
                     subtitle: task["subtitle"],
+                    enabled: enabled,
                   ),
                 )
               : TaskCard(
@@ -199,6 +201,7 @@ class _OperationalTasksState extends State<OperationalTasks> {
                   title: task["title"] as String,
                   ontap: () => task["onTap"](context),
                   subtitle: task["subtitle"],
+                  enabled: enabled,
                 );
         },
       ),

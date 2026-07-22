@@ -120,15 +120,12 @@ class SyncResponseServiceImpl implements SyncResponseService {
 
   @override
   Future<String> getPreRegIds(String jobId) async {
-    String preRegIdResponse = "";
     try {
-      preRegIdResponse = await SyncApi().getPreRegIds(jobId);
+      return await SyncApi().getPreRegIds(jobId);
     } on PlatformException {
       debugPrint('Application Id Api call failed, PlatformException');
-    } catch (e) {
-      debugPrint('Application Id call has failed! ${e.toString()}');
+      rethrow;
     }
-    return preRegIdResponse;
   }
 
   @override

@@ -10,6 +10,13 @@ import io.mosip.registration.clientmanager.entity.PreRegistrationList;
 public interface PreRegistrationDataSyncService {
     Map<String, Object> getPreRegistration(String preRegistrationId, boolean forceDownload);
     void fetchPreRegistrationIds(Runnable onFinish, String jobId);
+
+    /**
+     * Result of the most recently completed {@link #fetchPreRegistrationIds(Runnable, String)} call.
+     * Empty string if it succeeded; {@code APPLICATION_ID_SYNC_FAILED} if it failed.
+     * Must be read from within (or after) the {@code onFinish} callback.
+     */
+    String getLastFetchPreRegistrationIdsResult();
     ResponseDto fetchAndDeleteRecords();
     void deletePreRegRecords(ResponseDto responseDTO, List<PreRegistrationList> preRegList);
     PreRegistrationList getPreRegistrationRecordForDeletion(String preRegistrationId);
