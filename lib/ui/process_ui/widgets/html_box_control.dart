@@ -6,7 +6,6 @@
 */
 
 import 'dart:convert';
-import 'dart:developer';
 import 'package:intl/intl.dart' as intl;
 
 import 'package:flutter/material.dart';
@@ -153,17 +152,27 @@ class HtmlRenderer extends StatefulWidget {
 }
 
 class _HtmlRendererState extends State<HtmlRenderer> {
+  late GlobalProvider globalProvider;
+
   @override
-  Widget build(BuildContext context) {
-    GlobalProvider globalProvider = Provider.of<GlobalProvider>(context, listen: false);
+  void initState() {
+    super.initState();
+    globalProvider = Provider.of<GlobalProvider>(context, listen: false);
+    _saveHtmlHashes();
+  }
+
+  // Computes and persists the hash of each language's HTML content once.
+  // Must not run from build() — it triggers a native notifyObservers() call
+  // that (via MVEL re-evaluation) eventually calls GlobalProvider.notifyListeners(),
+  // which would re-trigger this same widget's build() and loop forever.
+  void _saveHtmlHashes() {
     for (int i = 0; i < globalProvider.chosenLang.length; i++) {
       List<int> bytes = utf8.encode(globalProvider
           .fieldDisplayValues[widget.field.id][i]);
       Uint8List unit8List = Uint8List.fromList(bytes);
-      String? hash;
       DemographicsApi().getHashValue(unit8List).then((value) {
-        hash = value;
-        globalProvider.fieldInputValue[widget.field.id!] = hash;
+        if (!mounted) return;
+        globalProvider.fieldInputValue[widget.field.id!] = value;
         DemographicsApi().addSimpleTypeDemographicField(
             widget.field.id!,
             value,
@@ -171,9 +180,12 @@ class _HtmlRendererState extends State<HtmlRenderer> {
                 .langToCode(globalProvider.chosenLang[i]));
       });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     String lang = globalProvider
                 .langToCode(globalProvider.chosenLang[context.watch<GlobalProvider>().htmlBoxTabIndex]);
-    log(lang);
     return SingleChildScrollView(
         child: Directionality(textDirection: intl.Bidi.isRtlLanguage(lang.substring(0,2)) ? TextDirection.rtl : TextDirection.ltr,
           child: Html(

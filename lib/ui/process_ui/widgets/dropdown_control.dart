@@ -43,6 +43,8 @@ class _CustomDropDownState extends State<DropDownControl> {
   int? index;
   int maxLen = 0;
   List<GenericData?> list = [];
+  String? _lastFetchedParentCode;
+  bool _hasFetchedOnce = false;
 
   // 'default' fieldType doesn't necessarily mean the dropdown is part of the
   // location hierarchy — some deployments use `default` for plain flat-list
@@ -96,11 +98,8 @@ class _CustomDropDownState extends State<DropDownControl> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_isHierarchical) {
-      setState(() {
-        index = globalProvider.hierarchyReverse.indexOf(widget.field.subType!);
-      });
+      index = globalProvider.hierarchyReverse.indexOf(widget.field.subType!);
     }
-    _getOptionsList();
   }
 
   void saveData(value) async {
@@ -238,7 +237,7 @@ class _CustomDropDownState extends State<DropDownControl> {
     return globalProvider.fieldInputValue.containsKey(_mapKey);
   }
 
-  _getOptionsList() async {
+  _getOptionsList(String? parentCode) async {
     List<GenericData?> temp = [];
     String lang = globalProvider.mandatoryLanguages[0]!;
     if (!_isHierarchical) {
@@ -248,16 +247,12 @@ class _CustomDropDownState extends State<DropDownControl> {
       temp =
           await _getLocationValues("$index", globalProvider.selectedLanguage);
     } else if (index != null && index! > 1) {
-      var parentCode = context
-          .watch<GlobalProvider>()
-          .groupedHierarchyValues[widget.field.group]![index! - 1];
       temp = await _getLocationValuesBasedOnParent(
           parentCode, widget.field.subType!, globalProvider.selectedLanguage);
     }
+    if (!mounted) return;
     setState(() {
       selected = null;
-    });
-    setState(() {
       list = temp;
     });
     if (_isFieldIdPresent()) {
@@ -267,9 +262,24 @@ class _CustomDropDownState extends State<DropDownControl> {
 
   @override
   Widget build(BuildContext context) {
-    _getOptionsList();
     bool isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
+
+    String? parentCode;
+    if (_isHierarchical && index != null && index! > 1) {
+      // Narrow, scoped dependency: only rebuilds this widget (and refetches
+      // options) when this one hierarchy slot changes, not on unrelated
+      // GlobalProvider changes elsewhere on the form. context.select is only
+      // valid here, inside build() — not in didChangeDependencies().
+      parentCode = context.select<GlobalProvider, String?>((p) =>
+          p.groupedHierarchyValues[widget.field.group]?[index! - 1]);
+    }
+    if (!_hasFetchedOnce || parentCode != _lastFetchedParentCode) {
+      _hasFetchedOnce = true;
+      _lastFetchedParentCode = parentCode;
+      _getOptionsList(parentCode);
+    }
+
     return Column(
       children: [
         Card(

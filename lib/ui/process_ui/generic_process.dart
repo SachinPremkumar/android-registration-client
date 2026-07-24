@@ -63,6 +63,17 @@ class _GenericProcessState extends State<GenericProcess>
   bool _isContinueProcessing = false;
   bool fieldSelectionCompleted = false;
 
+  // customValidation is expensive (it can call native MVEL evaluation per
+  // field) and was previously invoked unconditionally on every build(),
+  // with its completion always calling setState() — which triggers another
+  // build(), which re-runs customValidation again, forever. That
+  // self-sustaining loop competes with scrolling for the main thread on
+  // every frame. These two fields throttle it to a bounded rate instead of
+  // running flat-out, while still keeping the Continue button state fresh.
+  bool _isValidatingContinueButton = false;
+  DateTime? _lastContinueButtonValidation;
+  static const _continueButtonValidationInterval = Duration(milliseconds: 400);
+
   List<String> postRegistrationTabs = [
     'Preview',
     'Authentication',
@@ -616,6 +627,57 @@ class _GenericProcessState extends State<GenericProcess>
     return isValid;
   }
 
+  void _scheduleContinueButtonValidation(int size, Process process) {
+    if (_isValidatingContinueButton) return;
+    final now = DateTime.now();
+    if (_lastContinueButtonValidation != null &&
+        now.difference(_lastContinueButtonValidation!) <
+            _continueButtonValidationInterval) {
+      return;
+    }
+    _isValidatingContinueButton = true;
+    _lastContinueButtonValidation = now;
+
+    customValidation(globalProvider.newProcessTabIndex, process, size)
+        .then((value) {
+      _isValidatingContinueButton = false;
+      if (!mounted) return;
+      setState(() {
+        // Field selection screen validation (UPDATE process before consent)
+        if (globalProvider.newProcessTabIndex == 0 && !fieldSelectionCompleted) {
+          continueButton = value &&
+              globalProvider.updateFieldKey.currentState != null &&
+              globalProvider.updateFieldKey.currentState!.validate();
+        }
+        // Consent screen after field selection
+        else if (globalProvider.newProcessTabIndex == 0 && fieldSelectionCompleted) {
+          continueButton = true;
+        }
+        // Regular screen validation
+        else {
+          continueButton = value &&
+              globalProvider.formKey.currentState != null &&
+              globalProvider.formKey.currentState!.validate();
+
+          // Additional info validation
+          if (globalProvider.newProcessTabIndex < size) {
+            final screen = process.screens![globalProvider.newProcessTabIndex]!;
+            if (screen.additionalInfoRequestIdRequired == true &&
+                (globalProvider.additionalInfoReqId == null ||
+                    globalProvider.additionalInfoReqId!.trim().isEmpty)) {
+              continueButton = false;
+            }
+          }
+        }
+        if (globalProvider.newProcessTabIndex >= size) {
+          continueButton = true;
+        }
+      });
+    }, onError: (_) {
+      _isValidatingContinueButton = false;
+    });
+  }
+
   Future<void> continueButtonTap(int size, Process process) async {
     setState(() {
       _isContinueProcessing = true;
@@ -768,39 +830,7 @@ class _GenericProcessState extends State<GenericProcess>
     final Process process = arguments["process"];
     int size = process.screens!.length;
 
-    customValidation(globalProvider.newProcessTabIndex, process, size).then((value) {
-      setState(() {
-        // Field selection screen validation (UPDATE process before consent)
-        if (globalProvider.newProcessTabIndex == 0 && !fieldSelectionCompleted) {
-          continueButton = value &&
-              globalProvider.updateFieldKey.currentState != null &&
-              globalProvider.updateFieldKey.currentState!.validate();
-        } 
-        // Consent screen after field selection
-        else if (globalProvider.newProcessTabIndex == 0 && fieldSelectionCompleted) {
-          continueButton = true;
-        } 
-        // Regular screen validation
-        else {
-          continueButton = value &&
-              globalProvider.formKey.currentState != null &&
-              globalProvider.formKey.currentState!.validate();
-
-          // Additional info validation
-          if (globalProvider.newProcessTabIndex < size) {
-            final screen = process.screens![globalProvider.newProcessTabIndex]!;
-            if (screen.additionalInfoRequestIdRequired == true &&
-                (globalProvider.additionalInfoReqId == null ||
-                    globalProvider.additionalInfoReqId!.trim().isEmpty)) {
-              continueButton = false;
-            }
-          }
-        }
-      });
-      if (globalProvider.newProcessTabIndex >= size) {
-        continueButton = true;
-      }
-    });
+    _scheduleContinueButtonValidation(size, process);
 
     // Auth button validation for all processes
     if (username.trim().isNotEmpty && password.trim().isNotEmpty) {

@@ -34,12 +34,16 @@ class _CustomDynamicDropDownState extends State<GenderControl> {
   late RegistrationTaskProvider registrationTaskProvider;
   List<DynamicFieldData?>? fieldValueData;
 
+  // Stable future — avoids FutureBuilder re-fetching on every rebuild
+  late Future<List<Map<String, String?>>> _fieldValuesFuture;
+
   @override
   void initState() {
     globalProvider = Provider.of<GlobalProvider>(context, listen: false);
     registrationTaskProvider =
         Provider.of<RegistrationTaskProvider>(context, listen: false);
     String lang = globalProvider.mandatoryLanguages[0]!;
+    _fieldValuesFuture = _getFieldValues(widget.field.subType!, "eng");
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (context
           .read<GlobalProvider>()
@@ -197,7 +201,7 @@ class _CustomDynamicDropDownState extends State<GenderControl> {
         globalProvider.codeToLanguageMapper[mandatoryLangCode] ?? "English";
 
     return FutureBuilder(
-        future: _getFieldValues(widget.field.subType!, "eng"),
+        future: _fieldValuesFuture,
         builder: (BuildContext context,
             AsyncSnapshot<List<Map<String, String?>>> snapshot) {
           return Card(

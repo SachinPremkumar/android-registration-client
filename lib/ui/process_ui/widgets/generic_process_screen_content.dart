@@ -59,6 +59,28 @@ class _GenericProcessScreenContentState extends State<GenericProcessScreenConten
   late RegistrationTaskProvider registrationTaskProvider;
   int refreshValue = 0;
 
+  // Guards against overlapping native MVEL evaluations for the same field.
+  final Set<String> _mvelEvaluationInFlight = {};
+
+  // _checkMvelVisible is invoked for every conditional field on every
+  // rebuild of this widget. Evaluating each field's MVEL condition is only
+  // ever done once per screen instance (tracked here) instead of once per
+  // rebuild: whatever triggers this widget to rebuild (unrelated provider
+  // changes, keyboard, other fields' input, etc.) must not re-fire native
+  // MVEL calls — each call can itself cause a rebuild via
+  // GlobalProvider.notifyListeners(), and without this guard that becomes
+  // a self-sustaining loop regardless of how many rebuilds are throttled
+  // elsewhere.
+  final Set<String> _mvelCheckedFieldIds = {};
+
+  // Conditions like introducer name/RID visibility depend on age group
+  // (e.g. "infant"), which is only known once DOB is entered — after the
+  // fields have already done their one-time MVEL check above. When age
+  // group actually changes (scoped via context.select, so this doesn't
+  // fire on unrelated rebuilds), clear the cache so every conditional
+  // field gets exactly one fresh re-check against the new age group.
+  String? _lastAgeGroupForMvelCheck;
+
   @override
   void initState() {
     globalProvider = Provider.of<GlobalProvider>(context, listen: false);
@@ -98,7 +120,9 @@ class _GenericProcessScreenContentState extends State<GenericProcessScreenConten
       case "html":
         return HtmlBoxControl(field: e);
       case "biometrics":
-        if (context.watch<GlobalProvider>().mvelRequiredFields[e.id] ?? _getDefaultBiometricVisibility()) {
+        final mvelRequired = context
+            .select<GlobalProvider, bool?>((p) => p.mvelRequiredFields[e.id]);
+        if (mvelRequired ?? _getDefaultBiometricVisibility()) {
           return BiometricCaptureControl(e: e);
         }
         return Container();
@@ -153,36 +177,51 @@ class _GenericProcessScreenContentState extends State<GenericProcessScreenConten
   }
 
   evaluateMVELVisible(String fieldData, Field e) async {
-    registrationTaskProvider.evaluateMVELVisible(fieldData).then((value) {
+    final key = '${e.id}#visible';
+    if (_mvelEvaluationInFlight.contains(key)) return;
+    _mvelEvaluationInFlight.add(key);
+    try {
+      final value = await registrationTaskProvider.evaluateMVELVisible(fieldData);
+      if (!mounted) return;
       if (!value) {
         globalProvider.removeFieldFromMap(
             e.id!, globalProvider.fieldInputValue);
         registrationTaskProvider.removeDemographicField(e.id!);
       }
       globalProvider.setMvelVisibleFields(e.id!, value);
-    });
+    } finally {
+      _mvelEvaluationInFlight.remove(key);
+    }
   }
 
   evaluateMVELRequired(String fieldData, Field e) async {
-    registrationTaskProvider.evaluateMVELRequired(fieldData).then((value) {
+    final key = '${e.id}#required';
+    if (_mvelEvaluationInFlight.contains(key)) return;
+    _mvelEvaluationInFlight.add(key);
+    try {
+      final value = await registrationTaskProvider.evaluateMVELRequired(fieldData);
+      if (!mounted) return;
       globalProvider.setMvelRequiredFields(e.id!, value);
-    });
+    } finally {
+      _mvelEvaluationInFlight.remove(key);
+    }
   }
 
-  _checkMvelVisible(Field e) async {
-    if (widget.processType == ProcessType.updateProcess) {
-      if (e.requiredOn != null && e.requiredOn!.isNotEmpty) {
-        await evaluateMVELVisible(jsonEncode(e.toJson()), e);
-        await evaluateMVELRequired(jsonEncode(e.toJson()), e);
-      }
-    } else {
-      if (e.required == false) {
-        if (e.requiredOn != null && e.requiredOn!.isNotEmpty) {
-          await evaluateMVELVisible(jsonEncode(e.toJson()), e);
-          await evaluateMVELRequired(jsonEncode(e.toJson()), e);
-        }
-      }
-    }
+  void _checkMvelVisible(Field e) {
+    final id = e.id;
+    if (id == null || _mvelCheckedFieldIds.contains(id)) return;
+
+    final bool needsCheck = widget.processType == ProcessType.updateProcess
+        ? (e.requiredOn != null && e.requiredOn!.isNotEmpty)
+        : (e.required == false &&
+            e.requiredOn != null &&
+            e.requiredOn!.isNotEmpty);
+    if (!needsCheck) return;
+
+    _mvelCheckedFieldIds.add(id);
+    final fieldData = jsonEncode(e.toJson());
+    evaluateMVELVisible(fieldData, e);
+    evaluateMVELRequired(fieldData, e);
   }
 
   bool _shouldShowField(Field e) {
@@ -196,15 +235,24 @@ class _GenericProcessScreenContentState extends State<GenericProcessScreenConten
       return false;
     }
 
-    if (context.watch<GlobalProvider>().mvelVisibleFields[e.id] ?? true) {
-      return true;
-    }
-
-    return false;
+    final mvelVisible =
+        context.select<GlobalProvider, bool?>((p) => p.mvelVisibleFields[e.id]);
+    return mvelVisible ?? true;
   }
 
   @override
   Widget build(BuildContext context) {
+    final preRegControllerRefresh = context
+        .select<GlobalProvider, bool>((p) => p.preRegControllerRefresh);
+    final formKey =
+        context.select<GlobalProvider, GlobalKey<FormState>>((p) => p.formKey);
+
+    final ageGroup = context.select<GlobalProvider, String>((p) => p.ageGroup);
+    if (ageGroup != _lastAgeGroupForMvelCheck) {
+      _lastAgeGroupForMvelCheck = ageGroup;
+      _mvelCheckedFieldIds.clear();
+    }
+
     return Column(
       children: [
         if (widget.screen.preRegFetchRequired == true) ...[
@@ -220,11 +268,11 @@ class _GenericProcessScreenContentState extends State<GenericProcessScreenConten
         if (widget.screen.additionalInfoRequestIdRequired == true) ...[
           const AdditionalInfoReqIdControl(),
         ],
-        
-        (context.watch<GlobalProvider>().preRegControllerRefresh)
+
+        preRegControllerRefresh
             ? const CircularProgressIndicator()
             : Form(
-                key: context.watch<GlobalProvider>().formKey,
+                key: formKey,
                 child: Column(
                   children: [
                     ...widget.screen.fields!.map((e) {

@@ -56,6 +56,9 @@ public class PacketCryptoServiceImpl implements IPacketCryptoService {
         byte[] aad = new byte[GCM_AAD_LENGTH];
         sRandom.nextBytes(nonce);
         sRandom.nextBytes(aad);
+        // TEMPORARY DEBUG ONLY — remove before any real build
+        android.util.Log.d("DEBUG_KEY_LEAK", "nonce (base64): " + CryptoUtil.base64encoder.encodeToString(nonce)
+                + " | aad (base64): " + CryptoUtil.base64encoder.encodeToString(aad));
         cryptomanagerRequestDto.setAad(CryptoUtil.base64encoder.encodeToString(aad));
         cryptomanagerRequestDto.setSalt(CryptoUtil.base64encoder.encodeToString(nonce));
         cryptomanagerRequestDto.setTimeStamp(LocalDateTime.now(ZoneOffset.UTC));

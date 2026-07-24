@@ -117,26 +117,40 @@ class BiometricCaptureControlInitialization extends StatelessWidget {
               "Face";
         }
       }
-      context.read<BiometricCaptureControlProvider>().customSetterFace(
-          int.parse(await BiometricsApi()
-              .getMapValue("mosip.registration.num_of_face_retries")),
-          "noOfCapturesAllowed");
-      context.read<BiometricCaptureControlProvider>().customSetterThumbs(
-          int.parse(await BiometricsApi()
-              .getMapValue("mosip.registration.num_of_fingerprint_retries")),
-          "noOfCapturesAllowed");
-      context.read<BiometricCaptureControlProvider>().customSetterIris(
-          int.parse(await BiometricsApi()
-              .getMapValue("mosip.registration.num_of_iris_retries")),
-          "noOfCapturesAllowed");
-      context.read<BiometricCaptureControlProvider>().customSetterLeftHand(
-          int.parse(await BiometricsApi()
-              .getMapValue("mosip.registration.num_of_fingerprint_retries")),
-          "noOfCapturesAllowed");
-      context.read<BiometricCaptureControlProvider>().customSetterRightHand(
-          int.parse(await BiometricsApi()
-              .getMapValue("mosip.registration.num_of_fingerprint_retries")),
-          "noOfCapturesAllowed");
+      // Each of these does a native round-trip via await; the field's
+      // visibility can toggle off (e.g. age group changes) while one of
+      // these is in flight, disposing this widget. context.read after that
+      // point would throw "deactivated widget's ancestor" — so re-check
+      // context.mounted after every await before touching the provider.
+      final faceRetries = int.parse(await BiometricsApi()
+          .getMapValue("mosip.registration.num_of_face_retries"));
+      if (!context.mounted) return;
+      context.read<BiometricCaptureControlProvider>()
+          .customSetterFace(faceRetries, "noOfCapturesAllowed");
+
+      final thumbsRetries = int.parse(await BiometricsApi()
+          .getMapValue("mosip.registration.num_of_fingerprint_retries"));
+      if (!context.mounted) return;
+      context.read<BiometricCaptureControlProvider>()
+          .customSetterThumbs(thumbsRetries, "noOfCapturesAllowed");
+
+      final irisRetries = int.parse(await BiometricsApi()
+          .getMapValue("mosip.registration.num_of_iris_retries"));
+      if (!context.mounted) return;
+      context.read<BiometricCaptureControlProvider>()
+          .customSetterIris(irisRetries, "noOfCapturesAllowed");
+
+      final leftHandRetries = int.parse(await BiometricsApi()
+          .getMapValue("mosip.registration.num_of_fingerprint_retries"));
+      if (!context.mounted) return;
+      context.read<BiometricCaptureControlProvider>()
+          .customSetterLeftHand(leftHandRetries, "noOfCapturesAllowed");
+
+      final rightHandRetries = int.parse(await BiometricsApi()
+          .getMapValue("mosip.registration.num_of_fingerprint_retries"));
+      if (!context.mounted) return;
+      context.read<BiometricCaptureControlProvider>()
+          .customSetterRightHand(rightHandRetries, "noOfCapturesAllowed");
     }
 
     // bool isPortrait =

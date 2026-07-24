@@ -7,6 +7,7 @@
 
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
 import 'dart:developer';
 import 'package:intl/intl.dart';
 
@@ -44,6 +45,14 @@ class _TextBoxControlState extends State<TextBoxControl>
   late GlobalProvider globalProvider;
   late RegistrationTaskProvider registrationTaskProvider;
 
+  // Transliteration does a native round-trip per target language and is only
+  // needed once the user pauses typing, not on every keystroke — running it
+  // unthrottled was piling up async work + setState-triggered rebuilds
+  // faster than keystrokes could be processed, which is what made typing
+  // feel sluggish. Debounced per field instance; the field's own value is
+  // still saved immediately below, not delayed behind this.
+  Timer? _transliterationDebounce;
+
   @override
   void initState() {
     globalProvider = Provider.of<GlobalProvider>(context, listen: false);
@@ -70,6 +79,7 @@ class _TextBoxControlState extends State<TextBoxControl>
 
   @override
   void dispose() {
+    _transliterationDebounce?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -101,6 +111,36 @@ class _TextBoxControlState extends State<TextBoxControl>
         value!,
         globalProvider.fieldInputValue,
       );
+    }
+  }
+
+  Future<void> _transliterateToOtherLanguages(
+      String value,
+      List<String> choosenLang,
+      String mandatoryLanguageCode,
+      Map<String, String> tranliterationLangMapper) async {
+    for (var target in choosenLang) {
+      String targetCode = globalProvider.langToCode(target);
+      if (targetCode != mandatoryLanguageCode) {
+        log("$mandatoryLanguageCode ----> $targetCode");
+        try {
+          String result = await TransliterationServiceImpl().transliterate(
+              TransliterationOptions(
+                  input: value,
+                  sourceLanguage: "Any",
+                  targetLanguage: tranliterationLangMapper[targetCode] ??
+                      targetCode.substring(0, 2)));
+          if (!mounted) return;
+          _saveDataToMap(result, targetCode);
+          saveData(result, targetCode);
+          setState(() {
+            controllerMap[targetCode]!.text = result;
+          });
+          log("Transliteration success : $result");
+        } catch (e) {
+          log("Transliteration failed : $e");
+        }
+      }
     }
   }
 
@@ -163,44 +203,28 @@ class _TextBoxControlState extends State<TextBoxControl>
               verticalGridSpacing: 12,
               children: choosenLang.map((code) {
                 String lang = globalProvider.langToCode(code);
-                  setState(() {
-                    controllerMap.putIfAbsent(lang,
-                        () => TextEditingController(text: _getDataFromMap(lang)));
-                  });
+                controllerMap.putIfAbsent(lang,
+                    () => TextEditingController(text: _getDataFromMap(lang)));
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: TextFormField(
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     controller: controllerMap[lang],
                   textCapitalization: TextCapitalization.words,
-                  onChanged: (value) async {
-                    if (lang == mandatoryLanguageCode) {
-                      for (var target in choosenLang) {
-                        String targetCode = globalProvider.langToCode(target);
-                        if (targetCode != mandatoryLanguageCode) {
-                          log("$mandatoryLanguageCode ----> $targetCode");
-                          try {
-                            String result = await TransliterationServiceImpl()
-                                .transliterate(TransliterationOptions(
-                                    input: value,
-                                    sourceLanguage: "Any",
-                                    targetLanguage: tranliterationLangMapper[
-                                            targetCode] ??
-                                        targetCode.substring(0, 2)));
-                            _saveDataToMap(result, targetCode);
-                            saveData(result, targetCode);
-                            setState(() {
-                              controllerMap[targetCode]!.text = result;
-                            });
-                            log("Transliteration success : $result");
-                          } catch (e) {
-                            log("Transliteration failed : $e");
-                          }
-                        }
-                      }
-                    }
+                  onChanged: (value) {
+                    // Save the field being typed into immediately — this
+                    // must not wait behind the transliteration round-trips.
                     _saveDataToMap(value, lang);
                     saveData(value, lang);
+
+                    if (lang == mandatoryLanguageCode) {
+                      _transliterationDebounce?.cancel();
+                      _transliterationDebounce =
+                          Timer(const Duration(milliseconds: 400), () {
+                        _transliterateToOtherLanguages(value, choosenLang,
+                            mandatoryLanguageCode, tranliterationLangMapper);
+                      });
+                    }
                   },
                   validator: (value) {
                     if (!widget.e.required!) {
