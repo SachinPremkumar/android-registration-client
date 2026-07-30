@@ -11,6 +11,8 @@ import static io.mosip.registration.packetmanager.util.PacketManagerConstant.OTH
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.tom_roush.pdfbox.pdmodel.PDDocument;
@@ -644,11 +646,24 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     private byte[] convertImageToPDF(List<byte[]> images) {
+        Float compressionQuality = null;
+        if (globalParamRepository != null) {
+            String qualityStr = globalParamRepository.getCachedStringGlobalParam(RegistrationConstants.JPG_COMPRESSION_QUALITY);
+            if (qualityStr != null) {
+                try {
+                    compressionQuality = Float.parseFloat(qualityStr);
+                } catch (NumberFormatException e) {
+                    Log.w(TAG, "Failed to parse compression quality configuration: " + qualityStr, e);
+                }
+            }
+        }
+
         try (PDDocument pdDocument = new PDDocument();
              ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-            for (byte[] image : images) {
+            for (byte[] rawImage : images) {
                 PDPage pdPage = new PDPage();
-                Log.i(TAG, "image size after compression :" + image.length);
+                byte[] image = getCompressedImage(rawImage, compressionQuality);
+                Log.i(TAG, "image size after compression :" + (image != null ? image.length : 0));
                 PDImageXObject pdImageXObject = PDImageXObject.createFromByteArray(pdDocument, image, "");
                 int[] scaledDimension = getScaledDimension(pdImageXObject.getWidth(), pdImageXObject.getHeight(),
                         (int) pdPage.getMediaBox().getWidth(), (int) pdPage.getMediaBox().getHeight());
@@ -668,8 +683,24 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     private byte[] getCompressedImage(byte[] image, Float compressionQuality) {
-        //TODO compress image
-        return image;
+        if (image == null || image.length == 0) {
+            return image;
+        }
+        try {
+            Bitmap bitmap = BitmapFactory.decodeByteArray(image, 0, image.length);
+            if (bitmap == null) {
+                return image;
+            }
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            float qualityFloat = (compressionQuality == null || compressionQuality <= 0.0f || compressionQuality > 1.0f) ? 0.7f : compressionQuality;
+            int qualityInt = Math.round(qualityFloat * 100);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, qualityInt, byteArrayOutputStream);
+            bitmap.recycle();
+            return byteArrayOutputStream.toByteArray();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to compress document image", e);
+            return image;
+        }
     }
 
     private static int[] getScaledDimension(int originalWidth, int originalHeight, int boundWidth,

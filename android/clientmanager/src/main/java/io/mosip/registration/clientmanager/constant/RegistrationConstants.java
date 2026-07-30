@@ -58,6 +58,7 @@ public class RegistrationConstants {
     public static final String IRIS_ATTEMPTS_KEY = "mosip.registration.num_of_iris_retries";
     public static final String FACE_ATTEMPTS_KEY = "mosip.registration.num_of_face_retries";
     public static final String SERVER_VERSION = "mosip.registration.server_version";
+    public static final String JPG_COMPRESSION_QUALITY = "mosip.registration.doc.jpg.compression";
     public static final String PRIMARY_LANGUAGE = "mosip.primary-language";
     public static final String SECONDARY_LANGUAGE = "mosip.secondary-language";
     public static final String CONSENT_SCREEN_TEMPLATE_NAME = "mosip.registration.consent-screen-template-name";
