@@ -119,9 +119,9 @@ public class CryptoManagerServiceImpl implements CryptoManagerService {
             }
         }
 
-        // TEST ONLY — see CredIssuerTestConfig. Set ENABLED = false to restore keymanager lookup.
-        String certificateData = CredIssuerTestConfig.ENABLED
-                ? CredIssuerTestConfig.TEST_CERTIFICATE_PEM
+        // TEST ONLY — Folder-based test certificate loading (see TestKeyStorageService)
+        String certificateData = TestKeyStorageService.isTestModeEnabled(context)
+                ? TestKeyStorageService.getTestCertificate(context)
                 : certificateManagerService.getCertificate("REGISTRATION", cryptoRequestDto.getReferenceId());
         Certificate certificate = convertToCertificate(certificateData);
         Log.i(TAG,"Found the cerificate, proceeding with session key encryption.");
